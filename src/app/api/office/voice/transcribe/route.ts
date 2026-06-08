@@ -6,8 +6,20 @@ export const runtime = "nodejs";
 
 export const MAX_VOICE_UPLOAD_BYTES = 20 * 1024 * 1024;
 
+const HO3D_TRANSCRIPTION_AVAILABLE = !!process.env.HO3D_PACKAGE_ROOT?.trim();
+
 export async function POST(request: Request) {
   try {
+    // ── HO3D availability check ────────────────────────────────────────────
+    if (!HO3D_TRANSCRIPTION_AVAILABLE) {
+      return NextResponse.json(
+        {
+          error:
+            "HO3D voice transcription is not available. Set HO3D_PACKAGE_ROOT to enable it.",
+        },
+        { status: 501 },
+      );
+    }
     // ── Early size check via Content-Length ──────────────────────────────────
     // Reject obviously-oversized uploads BEFORE buffering any request body
     // into memory. This prevents a DoS/OOM attack where a huge payload is

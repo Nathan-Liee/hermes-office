@@ -5,33 +5,22 @@ import { CheckCircle2, ExternalLink } from "lucide-react";
 
 const prerequisites = [
   {
-    label: "HO3D installed",
-    detail: "Install via npm, pnpm, or from source",
-    link: "https://docs.ho3d.ai",
-    linkLabel: "Installation docs",
+    label: "Hermes API running",
+    detail: "Hermes 9router listening on localhost:20128",
+    command: "9router on localhost:20128",
   },
   {
-    label: "Gateway running",
-    detail: "Start with: ho3d gateway start",
-    command: "ho3d gateway start",
-  },
-  {
-    label: "Gateway URL and token",
-    detail: "Found in ~/.ho3d/ho3d.json or your remote setup",
-  },
-  {
-    label: "Node.js 20+",
-    detail: "Required for running HO3D locally",
-    link: "https://nodejs.org",
-    linkLabel: "Download Node.js",
+    label: "HO3D server",
+    detail: "The HO3D frontend app connected to Hermes",
+    command: "npm run dev",
   },
 ] as const;
 
 export const PrerequisitesStep = () => (
   <div className="space-y-2.5">
     <p className="text-[13px] leading-5 text-white/70">
-      Make sure you have these ready before connecting. If you already have
-      HO3D running, you can skip this step.
+      Make sure these services are running before connecting. If Hermes API
+      and HO3D are both up, you can skip this step.
     </p>
 
     <div className="space-y-1.5">
@@ -68,12 +57,12 @@ export const PrerequisitesStep = () => (
     <p className="text-[10px] leading-4 text-white/40">
       Need help? Check{" "}
       <a
-        href="https://docs.ho3d.ai"
+        href="https://hermes-agent.nousresearch.com/docs"
         target="_blank"
         rel="noopener noreferrer"
         className="text-amber-300/70 hover:text-amber-200"
       >
-        docs.ho3d.ai
+        Hermes Agent docs
       </a>{" "}
       or{" "}
       <a

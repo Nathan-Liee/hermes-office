@@ -1,26 +1,19 @@
-[
-  {
-    "id": "agent-hermes",
-    "name": "Hermes",
-    "avatar": null,
-    "avatarSeed": "hermes-default",
-    "role": "assistant",
-    "description": "Main Hermes agent — general purpose assistant"
-  },
-  {
-    "id": "agent-athena",
-    "name": "Athena",
-    "avatar": null,
-    "avatarSeed": "athena-default",
-    "role": "assistant",
-    "description": "Strategic advisor & research analyst"
-  },
-  {
-    "id": "agent-midas",
-    "name": "Midas",
-    "avatar": null,
-    "avatarSeed": "midas-default",
-    "role": "assistant",
-    "description": "Financial analysis & data processing"
-  }
-]
+[{
+  "id": "agent-hermes",
+  "name": "Hermes",
+  "avatarSeed": "hermes-h3x",
+  "role": "assistant",
+  "description": "Main Hermes agent — general purpose assistant"
+}, {
+  "id": "agent-athena",
+  "name": "Athena",
+  "avatarSeed": "athena-owl",
+  "role": "assistant",
+  "description": "Strategic advisor & research analyst"
+}, {
+  "id": "agent-midas",
+  "name": "Midas",
+  "avatarSeed": "midas-coin",
+  "role": "assistant",
+  "description": "Financial analysis & data processing"
+}]
