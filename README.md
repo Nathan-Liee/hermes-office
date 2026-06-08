@@ -1,31 +1,20 @@
-# HO3D — A 3D Workspace for AI Agents
+# HO3D — Hermes Office 3D
+
+> **Fork of [Claw3D](https://github.com/iamlukethedev/Claw3D) by [Luke The Dev](https://x.com/iamlukethedev)** — stripped of OpenClaw dependencies, rebuilt as Hermes-native.
+>
+> MIT License — Copyright (c) 2026 Luke The Dev. All rights to the original work remain with the author.
 
 <p align="center">
-    <img src="assets/branding/ho3d-hero.png" alt="HO3D" width="700">
+  <strong>A 3D VIRTUAL OFFICE FOR YOUR AI TEAM</strong>
 </p>
 
-<p align="center">
-  <strong>AN OFFICE FOR YOUR AI TEAM!</strong>
-</p>
-
-<p align="center">
-  <a href="https://github.com/iamlukethedev/HO3D/actions/workflows/docker-publish.yml?query=branch%3Amain"><img src="https://img.shields.io/github/actions/workflow/status/iamlukethedev/HO3D/docker-publish.yml?branch=main&style=for-the-badge" alt="CI status"></a>
-  <a href="https://github.com/iamlukethedev/HO3D/releases"><img src="https://img.shields.io/github/v/release/iamlukethedev/HO3D?include_prereleases&style=for-the-badge" alt="GitHub release"></a>
-  <a href="https://discord.gg/UzwNn5Zkhr"><img src="https://img.shields.io/discord/1456350064065904867?label=Discord&logo=discord&logoColor=white&color=5865F2&style=for-the-badge" alt="Discord"></a>
-  <a href="https://x.com/iamlukethedev"><img src="https://img.shields.io/badge/Follow-%40iamlukethedev-000000?style=for-the-badge&logo=x&logoColor=white" alt="Follow on X"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
-</p>
-
-**HO3D** is a _3D virtual office for AI agents_ you run on your own infrastructure.
-Instead of watching automation through dashboards and logs, you walk through a live 3D office where your agents collaborate, review code, run standups, ship pull requests, and execute tasks side by side. The Gateway is just the control plane — the product is the office.
+**HO3D** is a _3D virtual office for AI agents_ — Hermes-native fork focused on direct integration with the Hermes Agent API. Instead of watching automation through dashboards and logs, you walk through a live 3D office where your agents collaborate, review code, run standups, ship pull requests, and execute tasks side by side.
 
 If you want a personal, self-hosted workspace that turns your AI workforce into something you can actually _see_, this is it.
 
-Supported runtimes include: **Hermes** (native), OpenClaw Gateway, a direct HTTP `custom` runtime provider for orchestrator-backed stacks, and a built-in demo gateway for office exploration without a real agent framework.
+[GitHub](https://github.com/Nathan-Liee/hermes-office) · [License](LICENSE)
 
-[Website](https://www.ho3d.ai/) · [Vision](VISION.md) · [Architecture](ARCHITECTURE.md) · [Tutorial](TUTORIAL.md) · [Getting Started](#quick-start) · [Runtime Profiles](docs/runtime-profiles.md) · [Multi-Agent Beta](docs/multi-agent-beta.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Discord](https://discord.gg/UzwNn5Zkhr)
-
-Built and maintained by **LukeTheDev**. Follow on X: [@iamlukethedev](https://x.com/iamlukethedev).
+**Built on Claw3D by [Luke The Dev](https://x.com/iamlukethedev)** — this fork adapts the original for Hermes-only usage. See LICENSE for full terms.
 
 ## What you can do with HO3D
 

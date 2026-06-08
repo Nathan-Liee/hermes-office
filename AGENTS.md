@@ -1,20 +1,18 @@
 # Agent Instructions
 
-Keep repository instructions generic and safe for open source.
+**HO3D (Hermes Office 3D)** — Hermes-native fork of **Claw3D** by [Luke The Dev](https://x.com/iamlukethedev). MIT License — Copyright (c) 2026 Luke The Dev.
 
-This repo is a frontend for Hermes Agent. Keep any runtime checkout separate from this repository.
+This repo is a frontend for Hermes Agent. Keep any Hermes runtime checkout separate from this repository.
 
-Do not modify the Hermes Agent source code. When the user asks for changes, they are asking for changes to this app. Your solutions should be applied to this app but to understand the full context of implementing your solution, you will need to search through Hermes or OpenClaw source code if relevant.
+Do not modify the original Claw3D source. This fork is a modified version — keep instructions generic and safe for open source.
 
 If you use local private overlay instructions, keep them outside the repository and do not commit them here.
 
 Do not commit personal, environment-specific, or secret instructions to this repository.
 
-## Cursor Cloud specific instructions
+## Service overview
 
-### Service overview
-
-HO3D is a Next.js 16 frontend (TypeScript, React 19, Three.js, Phaser) for Hermes. It runs a custom Node.js server (`server/index.js`) that communicates with Hermes via the Hermes API. No database or Docker is required. The only hard system dependency is Node.js 20+ with npm 10+.
+HO3D is a Next.js 16 frontend (TypeScript, React 19, Three.js, Phaser) for Hermes Agent. It runs a custom Node.js server (`server/index.js`). No database or Docker is required. The only hard system dependency is Node.js 20+ with npm 10+.
 
 ### Running the app
 
