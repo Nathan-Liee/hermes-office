@@ -174,7 +174,7 @@ export type StudioOfficePreferencePublic = {
 export type StudioOfficePreferencePatch = {
   title?: string | null;
   remoteOfficeEnabled?: boolean;
-  remoteOfficeSourceKind?: "presence_endpoint" | "openclaw_gateway";
+  remoteOfficeSourceKind?: "presence_endpoint" | "ho3d_gateway";
   remoteOfficeLabel?: string | null;
   remoteOfficePresenceUrl?: string | null;
   remoteOfficeGatewayUrl?: string | null;
@@ -564,7 +564,7 @@ const normalizeRemoteOfficeSourceKind = (
   fallback: StudioOfficePreference["remoteOfficeSourceKind"] = DEFAULT_REMOTE_OFFICE_SOURCE_KIND,
 ): StudioOfficePreference["remoteOfficeSourceKind"] => {
   const kind = coerceString(value);
-  if (kind === "presence_endpoint" || kind === "openclaw_gateway") {
+  if (kind === "presence_endpoint" || kind === "ho3d_gateway") {
     return kind;
   }
   return fallback;

@@ -125,8 +125,8 @@ const DEFAULT_UPSTREAM_GATEWAY_URL =
   process.env.NEXT_PUBLIC_GATEWAY_URL || "ws://localhost:18789";
 const INITIAL_AUTO_CONNECT_DELAY_MS = 900;
 const INITIAL_CONNECT_RETRY_DELAY_MS = 1_200;
-const OPENCLAW_CONTROL_UI_CLIENT_ID = "openclaw-control-ui";
-const OPENCLAW_WEBCHAT_UI_CLIENT_ID = "webchat-ui";
+const OPENCLAW_CONTROL_UI_CLIENT_ID = "ho3d-control-ui";
+const OPENCLAW_WEBCHAT_UI_CLIENT_ID = "ho3d-webchat-ui";
 
 const isAutoManagedAdapter = (adapterType: StudioGatewayAdapterType) =>
   adapterType === "openclaw" || adapterType === "hermes" || adapterType === "demo";
@@ -532,19 +532,19 @@ export const syncGatewaySessionSettings = async ({
 };
 
 const doctorFixHint =
-  "Run `npx openclaw doctor --fix` on the gateway host (or `pnpm openclaw doctor --fix` in a source checkout).";
+  "Run `hermes doctor --fix` on the gateway host.";
 
 const protocolMismatchHint =
-  "This gateway looks too old for HO3D's protocol v3. Upgrade OpenClaw, use the Hermes adapter, or run `npm run demo-gateway` for a no-framework office demo.";
+  "This gateway looks too old for HO3D. Upgrade HO3D or use a compatible Hermes runtime.";
 
 const tailscaleGatewayHint =
-  "If this is a remote OpenClaw/Tailscale gateway, confirm the Studio host can reach the `wss://...` address and approve the first device pairing on the gateway host with `openclaw devices approve --latest`.";
+  "If this is a remote HO3D gateway, confirm the Studio host can reach the address and approve the first device pairing on the gateway host.";
 
 const pairingRequiredHint =
-  "This gateway is asking for first-time device approval. Run `openclaw devices approve --latest` on the gateway host, then restart HO3D and reconnect from this browser.";
+  "This gateway is asking for first-time device approval. Approve on the gateway host, then restart HO3D and reconnect.";
 
 const requiresDeviceIdentityHint =
-  "This gateway rejected the client as a control UI without device identity. For remote OpenClaw/Tailscale connections, update to the latest HO3D build and approve the device pairing on the gateway host.";
+  "This gateway rejected the client as a control UI without device identity. For remote HO3D connections, update to the latest build and approve the device pairing.";
 
 const isGatewayProtocolMismatchError = (error: GatewayResponseError) => {
   if (error.code.trim().toUpperCase() !== "INVALID_REQUEST") return false;

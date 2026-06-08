@@ -18,7 +18,7 @@ import {
 // storage and document any changes to this threat model in README.md and SECURITY.md.
 const SETTINGS_DIRNAME = "ho3d";
 const SETTINGS_FILENAME = "settings.json";
-const OPENCLAW_CONFIG_FILENAME = "openclaw.json";
+const HO3D_CONFIG_FILENAME = "ho3d.json";
 const DEFAULT_LOCAL_GATEWAY_PORT = 18789;
 
 export const resolveStudioSettingsPath = () =>
@@ -43,7 +43,7 @@ const buildLocalProfile = (url: string, token = ""): StudioGatewayProfile => ({ 
 
 const readOpenclawGatewayDefaults = (): StudioGatewaySettings | null => {
   try {
-    const configPath = path.join(resolveStateDir(), OPENCLAW_CONFIG_FILENAME);
+    const configPath = path.join(resolveStateDir(), HO3D_CONFIG_FILENAME);
     if (!fs.existsSync(configPath)) return null;
     const raw = fs.readFileSync(configPath, "utf8");
     const parsed = JSON.parse(raw) as unknown;
@@ -57,11 +57,11 @@ const readOpenclawGatewayDefaults = (): StudioGatewaySettings | null => {
     const url = port ? `ws://localhost:${port}` : `ws://localhost:${DEFAULT_LOCAL_GATEWAY_PORT}`;
     if (!url) return null;
     return buildGatewaySettings({
-      adapterType: "openclaw",
+      adapterType: "ho3d",
       url,
       token,
       profiles: {
-        openclaw: buildLocalProfile(url, token),
+        ho3d: buildLocalProfile(url, token),
       },
     });
   } catch {
@@ -72,7 +72,7 @@ const readOpenclawGatewayDefaults = (): StudioGatewaySettings | null => {
 const normalizeAdapterType = (value: string | undefined): StudioGatewayAdapterType | null => {
   const normalized = value?.trim().toLowerCase();
   if (
-    normalized === "openclaw" ||
+    normalized === "ho3d" ||
     normalized === "hermes" ||
     normalized === "demo" ||
     normalized === "local" ||
@@ -99,7 +99,7 @@ const buildEnvGatewayDefaults = (): StudioGatewaySettings | null => {
   const envUrl = process.env.CLAW3D_GATEWAY_URL?.trim();
   const envToken = process.env.CLAW3D_GATEWAY_TOKEN?.trim() ?? "";
   const envAdapterType =
-    normalizeAdapterType(process.env.CLAW3D_GATEWAY_ADAPTER_TYPE) ?? "openclaw";
+    normalizeAdapterType(process.env.CLAW3D_GATEWAY_ADAPTER_TYPE) ?? "ho3d";
 
   const hermesProfile = readPortBasedGatewayProfile("hermes", "HERMES_ADAPTER_PORT");
   const demoProfile = readPortBasedGatewayProfile("demo", "DEMO_ADAPTER_PORT");

@@ -219,7 +219,7 @@ export const AgentEditorModal = ({
                   <div>
                     <div className="text-sm font-semibold text-inherit">Delete Agent</div>
                     <div className="text-xs text-red-100/85">
-                      Remove this agent from HO3D and OpenClaw.
+                      Remove this agent from HO3D and HO3D.
                     </div>
                   </div>
                 </button>

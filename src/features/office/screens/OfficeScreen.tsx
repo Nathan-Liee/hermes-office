@@ -148,7 +148,7 @@ import {
 import {
   buildCompanyRolePermissionsDraft,
   resolveCompanyPlanningAgent,
-  runOpenClawPlanningPrompt,
+  runHO3DPlanningPrompt,
 } from "@/features/company-builder/operations/companyBuilderGateway";
 import { runCompanyBootstrapOperation } from "@/features/company-builder/operations/companyBootstrapOperation";
 import type {
@@ -262,8 +262,8 @@ const createDemoMainAgentSeed = (): {
   toolCallingEnabled: false,
   showThinkingTraces: false,
 });
-const MAX_OPENCLAW_LOG_ENTRIES = 200;
-const MAX_OPENCLAW_AGENT_OUTPUT_LINES = 12;
+const MAX_HO3D_LOG_ENTRIES = 200;
+const MAX_HO3D_AGENT_OUTPUT_LINES = 12;
 const OFFICE_DANCE_MS = 60_000;
 const GATEWAY_LOADING_OVERLAY_DELAY_MS = 1_200;
 const GATEWAY_CONNECT_OVERLAY_DELAY_MS = 1_500;
@@ -292,7 +292,7 @@ const getLatestUserRequestForAgent = (
   };
 };
 
-type OpenClawLogEntry = {
+type HO3DLogEntry = {
   id: string;
   timestamp: string;
   eventName: string;
@@ -338,7 +338,7 @@ type PhoneCallSpeakPayload = {
   scenario: MockPhoneCallScenario;
 };
 
-const createOpenClawLogEntry = (params: {
+const createHO3DLogEntry = (params: {
   eventName: string;
   eventKind: string;
   summary: string;
@@ -348,9 +348,9 @@ const createOpenClawLogEntry = (params: {
   thinkingText?: string | null;
   streamText?: string | null;
   toolText?: string | null;
-}): OpenClawLogEntry => ({
+}): HO3DLogEntry => ({
   id: randomUUID(),
-  timestamp: formatOpenClawTimestamp(Date.now()),
+  timestamp: formatHO3DTimestamp(Date.now()),
   eventName: params.eventName,
   eventKind: params.eventKind,
   summary: params.summary,
@@ -362,7 +362,7 @@ const createOpenClawLogEntry = (params: {
   payloadText: safeJsonStringify(params.payload ?? null),
 });
 
-const formatOpenClawTimestamp = (timestampMs: number) => {
+const formatHO3DTimestamp = (timestampMs: number) => {
   const date = new Date(timestampMs);
   const hh = String(date.getHours()).padStart(2, "0");
   const mm = String(date.getMinutes()).padStart(2, "0");
@@ -371,7 +371,7 @@ const formatOpenClawTimestamp = (timestampMs: number) => {
   return `${hh}:${mm}:${ss}.${ms}`;
 };
 
-const formatOpenClawValue = (value: string | null | undefined) => {
+const formatHO3DValue = (value: string | null | undefined) => {
   const trimmed = value?.trim() ?? "";
   return trimmed || "-";
 };
@@ -441,7 +441,7 @@ const safeJsonStringify = (value: unknown) => {
 const escapeRegExp = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-const renderOpenClawHighlightedText = (
+const renderHO3DHighlightedText = (
   value: string,
   query: string,
 ): ReactNode => {
@@ -468,7 +468,7 @@ const resolveMessageRole = (message: unknown) =>
     ? ((message as Record<string, unknown>).role ?? null)
     : null;
 
-const formatOpenClawEventLogEntry = (event: EventFrame): OpenClawLogEntry => {
+const formatHO3DEventLogEntry = (event: EventFrame): HO3DLogEntry => {
   const eventKind = classifyGatewayEventKind(event.event);
   const baseSummary = `seq=${event.seq ?? "-"} stateVersion=${safeJsonStringify(event.stateVersion ?? null)}`;
   let summary = baseSummary;
@@ -523,7 +523,7 @@ const formatOpenClawEventLogEntry = (event: EventFrame): OpenClawLogEntry => {
     }
   }
 
-  return createOpenClawLogEntry({
+  return createHO3DLogEntry({
     eventName: event.event,
     eventKind,
     summary,
@@ -947,11 +947,11 @@ const inferRunningFromAgentSessions = async (params: {
 };
 
 type OfficeScreenProps = {
-  showOpenClawConsole?: boolean;
+  showHO3DConsole?: boolean;
 };
 
 export function OfficeScreen({
-  showOpenClawConsole = true,
+  showHO3DConsole = true,
 }: OfficeScreenProps) {
   const searchParams = useSearchParams();
   const debugEnabled = searchParams.get("officeDebug") === "1";
@@ -1015,13 +1015,13 @@ export function OfficeScreen({
   const deskMonitorCacheRef = useRef<
     Map<string, { agent: AgentState; monitor: OfficeDeskMonitor }>
   >(new Map());
-  const [openClawLogEntries, setOpenClawLogEntries] = useState<
-    OpenClawLogEntry[]
+  const [openClawLogEntries, setHO3DLogEntries] = useState<
+    HO3DLogEntry[]
   >([]);
-  const [openClawConsoleCollapsed, setOpenClawConsoleCollapsed] =
+  const [openClawConsoleCollapsed, setHO3DConsoleCollapsed] =
     useState(true);
-  const [openClawConsoleSearch, setOpenClawConsoleSearch] = useState("");
-  const [openClawConsoleCopyStatus, setOpenClawConsoleCopyStatus] = useState<
+  const [openClawConsoleSearch, setHO3DConsoleSearch] = useState("");
+  const [openClawConsoleCopyStatus, setHO3DConsoleCopyStatus] = useState<
     "idle" | "copied" | "error"
   >("idle");
   const taskBoardEventHandlerRef = useRef<(event: EventFrame) => void>(() => {});
@@ -2000,7 +2000,7 @@ export function OfficeScreen({
         throw new Error("Create or load at least one agent before using AI suggestions.");
       }
       setCompanyBuilderStatusLine(statusText);
-      return runOpenClawPlanningPrompt({
+      return runHO3DPlanningPrompt({
         client,
         dispatch,
         agent: livePlannerAgent,
@@ -2097,7 +2097,7 @@ export function OfficeScreen({
         const message = error instanceof Error ? error.message : String(error);
         return (
           message.includes("Permission denied") ||
-          message.includes("OPENCLAW_GATEWAY_SSH_TARGET") ||
+          message.includes("HO3D_GATEWAY_SSH_TARGET") ||
           message.includes("Invalid gateway URL") ||
           message.includes("Gateway URL is missing")
         );
@@ -2402,7 +2402,7 @@ export function OfficeScreen({
       );
       if (!agent) return;
       const confirmed = window.confirm(
-        `Delete ${agent.name}? This removes the agent record from OpenClaw and clears its scheduled automations. HO3D will not touch workspace files.`,
+        `Delete ${agent.name}? This removes the agent record from HO3D and clears its scheduled automations. HO3D will not touch workspace files.`,
       );
       if (!confirmed) return;
 
@@ -2571,13 +2571,13 @@ export function OfficeScreen({
           }
           // Do not replay movement directives from history refresh.
           // History can include old transport commands; replaying them causes auto-walks on load.
-          setOpenClawLogEntries((previous) => {
+          setHO3DLogEntries((previous) => {
             const next = [
               ...previous,
-              createOpenClawLogEntry({
+              createHO3DLogEntry({
                 eventName: "history-refresh",
                 eventKind: "derived",
-                summary: `session=${requestedSessionKey} reason=${params.reason} lastUser=${formatOpenClawValue(lastUser)} lastAssistant=${formatOpenClawValue(derived.lastAssistant)}`,
+                summary: `session=${requestedSessionKey} reason=${params.reason} lastUser=${formatHO3DValue(lastUser)} lastAssistant=${formatHO3DValue(derived.lastAssistant)}`,
                 messageText: lastUser || null,
                 streamText: derived.lastAssistant ?? null,
                 payload: {
@@ -2589,7 +2589,7 @@ export function OfficeScreen({
                 },
               }),
             ];
-            return next.slice(-MAX_OPENCLAW_LOG_ENTRIES);
+            return next.slice(-MAX_HO3D_LOG_ENTRIES);
           });
           if (debugEnabled) {
             console.info(
@@ -2603,10 +2603,10 @@ export function OfficeScreen({
             );
           }
         } catch (error) {
-          setOpenClawLogEntries((previous) => {
+          setHO3DLogEntries((previous) => {
             const next = [
               ...previous,
-              createOpenClawLogEntry({
+              createHO3DLogEntry({
                 eventName: "history-refresh",
                 eventKind: "error",
                 summary: `session=${requestedSessionKey} reason=${params.reason} refresh failed`,
@@ -2617,7 +2617,7 @@ export function OfficeScreen({
                 },
               }),
             ];
-            return next.slice(-MAX_OPENCLAW_LOG_ENTRIES);
+            return next.slice(-MAX_HO3D_LOG_ENTRIES);
           });
           if (!isGatewayDisconnectLikeError(error)) {
             console.error(
@@ -2886,9 +2886,9 @@ export function OfficeScreen({
     );
     const unsubscribeEvent = client.onEvent((event) => {
       lastGatewayActivityAtRef.current = Date.now();
-      setOpenClawLogEntries((previous) => {
-        const next = [...previous, formatOpenClawEventLogEntry(event)];
-        return next.slice(-MAX_OPENCLAW_LOG_ENTRIES);
+      setHO3DLogEntries((previous) => {
+        const next = [...previous, formatHO3DEventLogEntry(event)];
+        return next.slice(-MAX_HO3D_LOG_ENTRIES);
       });
       refreshRecentTransportSessionHistory(event);
       setOfficeTriggerState((previous) =>
@@ -3931,10 +3931,10 @@ export function OfficeScreen({
       }
 
       const intentSnapshot = resolveOfficeIntentSnapshot(trimmed);
-      setOpenClawLogEntries((previous) => {
+      setHO3DLogEntries((previous) => {
         const next = [
           ...previous,
-          createOpenClawLogEntry({
+          createHO3DLogEntry({
             eventName: "office-intent",
             eventKind: "derived",
             summary: `agent=${agentId} gym=${intentSnapshot.gym?.source ?? "-"} qa=${intentSnapshot.qa ?? "-"} github=${intentSnapshot.github ?? "-"} desk=${intentSnapshot.desk ?? "-"} text=${intentSnapshot.text?.phase ?? "-"}`,
@@ -3946,7 +3946,7 @@ export function OfficeScreen({
             },
           }),
         ];
-        return next.slice(-MAX_OPENCLAW_LOG_ENTRIES);
+        return next.slice(-MAX_HO3D_LOG_ENTRIES);
       });
       const pendingPhoneCall = phoneCallByAgentId[agentId] ?? null;
       const pendingTextMessage = textMessageByAgentId[agentId] ?? null;
@@ -4109,7 +4109,7 @@ export function OfficeScreen({
       }
       const transcript = result?.transcript?.trim() ?? "";
       if (!transcript) {
-        throw new Error("OpenClaw returned an empty transcript.");
+        throw new Error("HO3D returned an empty transcript.");
       }
       return transcript;
     },
@@ -4302,7 +4302,7 @@ export function OfficeScreen({
     return map;
   }, [state.agents]);
   const openClawLiveStateText = useMemo(() => {
-    const lines = ["== LIVE OPENCLAW STATE =="];
+    const lines = ["== LIVE HO3D STATE =="];
     if (state.agents.length === 0) {
       lines.push("No agents loaded yet.");
       return lines.join("\n");
@@ -4315,10 +4315,10 @@ export function OfficeScreen({
         `status=${agent.status} runId=${agent.runId ?? "-"} session=${agent.sessionKey}`,
       );
       lines.push(
-        `lastActivity=${agent.lastActivityAt ? formatOpenClawTimestamp(agent.lastActivityAt) : "-"} lastAssistant=${agent.lastAssistantMessageAt ? formatOpenClawTimestamp(agent.lastAssistantMessageAt) : "-"}`,
+        `lastActivity=${agent.lastActivityAt ? formatHO3DTimestamp(agent.lastActivityAt) : "-"} lastAssistant=${agent.lastAssistantMessageAt ? formatHO3DTimestamp(agent.lastAssistantMessageAt) : "-"}`,
       );
       lines.push(
-        `latestPreview=${formatOpenClawValue(agent.latestPreview)} lastUser=${formatOpenClawValue(agent.lastUserMessage)}`,
+        `latestPreview=${formatHO3DValue(agent.latestPreview)} lastUser=${formatHO3DValue(agent.lastUserMessage)}`,
       );
       if (agent.thinkingTrace?.trim()) {
         lines.push("thinking>");
@@ -4329,7 +4329,7 @@ export function OfficeScreen({
         lines.push(agent.streamText.trim());
       }
       const recentOutput = agent.outputLines
-        .slice(-MAX_OPENCLAW_AGENT_OUTPUT_LINES)
+        .slice(-MAX_HO3D_AGENT_OUTPUT_LINES)
         .map((line) => line.trimEnd())
         .filter(Boolean);
       if (recentOutput.length > 0) {
@@ -4387,26 +4387,26 @@ export function OfficeScreen({
         ? "Loading remote office."
         : remoteOfficeAgents.length > 0
           ? `${remoteOfficeAgents.length} agents visible.`
-          : remoteOfficeSourceKind === "openclaw_gateway"
+          : remoteOfficeSourceKind === "ho3d_gateway"
             ? "Connected to remote gateway. No agents visible yet."
           : remoteOfficeTokenConfigured
             ? "Connected. No agents visible yet."
             : "No agents visible yet.";
   const remoteMessagingAvailable =
-    remoteOfficeSourceKind === "openclaw_gateway" &&
+    remoteOfficeSourceKind === "ho3d_gateway" &&
     remoteOfficeGatewayUrl.trim().length > 0;
   const remoteMessagingDisabledReason = remoteMessagingAvailable
     ? null
-    : remoteOfficeSourceKind !== "openclaw_gateway"
+    : remoteOfficeSourceKind !== "ho3d_gateway"
       ? "Remote messaging currently works only with the remote gateway source."
       : remoteOfficeGatewayUrl.trim().length === 0
       ? "Remote messaging requires a remote gateway URL in office settings."
       : "Remote messaging is unavailable until the remote gateway is configured.";
-  const normalizedOpenClawConsoleSearch = openClawConsoleSearch
+  const normalizedHO3DConsoleSearch = openClawConsoleSearch
     .trim()
     .toLowerCase();
-  const filteredOpenClawLogEntries = useMemo(() => {
-    if (!normalizedOpenClawConsoleSearch) return openClawLogEntries;
+  const filteredHO3DLogEntries = useMemo(() => {
+    if (!normalizedHO3DConsoleSearch) return openClawLogEntries;
     return openClawLogEntries.filter((entry) =>
       [
         entry.timestamp,
@@ -4422,28 +4422,28 @@ export function OfficeScreen({
       ]
         .join("\n")
         .toLowerCase()
-        .includes(normalizedOpenClawConsoleSearch),
+        .includes(normalizedHO3DConsoleSearch),
     );
-  }, [normalizedOpenClawConsoleSearch, openClawLogEntries]);
+  }, [normalizedHO3DConsoleSearch, openClawLogEntries]);
   const openClawLiveStateMatchesSearch = useMemo(() => {
-    if (!normalizedOpenClawConsoleSearch) return true;
+    if (!normalizedHO3DConsoleSearch) return true;
     return openClawLiveStateText
       .toLowerCase()
-      .includes(normalizedOpenClawConsoleSearch);
-  }, [normalizedOpenClawConsoleSearch, openClawLiveStateText]);
+      .includes(normalizedHO3DConsoleSearch);
+  }, [normalizedHO3DConsoleSearch, openClawLiveStateText]);
   const openClawConsoleExportJson = useMemo(
     () =>
       safeJsonStringify({
         exportedAt: new Date().toISOString(),
         searchQuery: openClawConsoleSearch,
-        visibleEventCount: filteredOpenClawLogEntries.length,
+        visibleEventCount: filteredHO3DLogEntries.length,
         totalEventCount: openClawLogEntries.length,
         liveStateMatchesSearch: openClawLiveStateMatchesSearch,
         liveStateText: openClawLiveStateText,
-        events: filteredOpenClawLogEntries,
+        events: filteredHO3DLogEntries,
       }),
     [
-      filteredOpenClawLogEntries,
+      filteredHO3DLogEntries,
       openClawConsoleSearch,
       openClawLiveStateMatchesSearch,
       openClawLiveStateText,
@@ -4451,32 +4451,32 @@ export function OfficeScreen({
     ],
   );
 
-  const handleClearOpenClawConsole = useCallback(() => {
-    setOpenClawLogEntries([]);
+  const handleClearHO3DConsole = useCallback(() => {
+    setHO3DLogEntries([]);
   }, []);
-  const handleCopyOpenClawConsoleJson = useCallback(async () => {
+  const handleCopyHO3DConsoleJson = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(openClawConsoleExportJson);
-      setOpenClawConsoleCopyStatus("copied");
+      setHO3DConsoleCopyStatus("copied");
       window.setTimeout(() => {
-        setOpenClawConsoleCopyStatus("idle");
+        setHO3DConsoleCopyStatus("idle");
       }, 1800);
     } catch (error) {
-      console.error("Failed to copy OpenClaw console JSON.", error);
-      setOpenClawConsoleCopyStatus("error");
+      console.error("Failed to copy HO3D console JSON.", error);
+      setHO3DConsoleCopyStatus("error");
       window.setTimeout(() => {
-        setOpenClawConsoleCopyStatus("idle");
+        setHO3DConsoleCopyStatus("idle");
       }, 1800);
     }
   }, [openClawConsoleExportJson]);
-  const handleDownloadOpenClawConsoleJson = useCallback(() => {
+  const handleDownloadHO3DConsoleJson = useCallback(() => {
     const blob = new Blob([openClawConsoleExportJson], {
       type: "application/json;charset=utf-8",
     });
     const url = window.URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `openclaw-events-${Date.now()}.json`;
+    anchor.download = `ho3d-events-${Date.now()}.json`;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
@@ -4875,7 +4875,7 @@ export function OfficeScreen({
           taskBoardCronError={
             taskBoard.sharedTasksError ?? taskBoard.gatewayTasksError ?? taskBoard.cronError
           }
-          taskBoardCaptureDebug={showOpenClawConsole ? taskBoard.taskCaptureDebug : undefined}
+          taskBoardCaptureDebug={showHO3DConsole ? taskBoard.taskCaptureDebug : undefined}
           onTaskBoardCreateCard={() => {
             taskBoard.createManualCard();
           }}
@@ -5074,7 +5074,7 @@ export function OfficeScreen({
               cronError={
                 taskBoard.sharedTasksError ?? taskBoard.gatewayTasksError ?? taskBoard.cronError
               }
-              taskCaptureDebug={showOpenClawConsole ? taskBoard.taskCaptureDebug : undefined}
+              taskCaptureDebug={showHO3DConsole ? taskBoard.taskCaptureDebug : undefined}
               onCreateCard={() => {
                 taskBoard.createManualCard();
                 setActiveSidebarTab("kanban");
@@ -5159,19 +5159,19 @@ export function OfficeScreen({
         />
       ) : null}
 
-      {showOpenClawConsole ? (
+      {showHO3DConsole ? (
         <section className="pointer-events-auto fixed bottom-3 left-3 z-30 flex w-[520px] max-w-[calc(100vw-1.5rem)] flex-col overflow-hidden rounded border border-cyan-500/25 bg-black/78 shadow-2xl backdrop-blur">
           <div className="flex items-center justify-between border-b border-cyan-500/15 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-cyan-200/80">
             <span>Agent Event Console</span>
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-cyan-100/45">
                 agents {state.agents.length} | events{" "}
-                {filteredOpenClawLogEntries.length}/{openClawLogEntries.length}
+                {filteredHO3DLogEntries.length}/{openClawLogEntries.length}
               </span>
               <button
                 type="button"
                 onClick={() => {
-                  void handleCopyOpenClawConsoleJson();
+                  void handleCopyHO3DConsoleJson();
                 }}
                 className="rounded border border-cyan-500/20 px-2 py-0.5 text-[9px] text-cyan-100/70 transition-colors hover:border-cyan-400/45 hover:text-cyan-50"
               >
@@ -5183,14 +5183,14 @@ export function OfficeScreen({
               </button>
               <button
                 type="button"
-                onClick={handleDownloadOpenClawConsoleJson}
+                onClick={handleDownloadHO3DConsoleJson}
                 className="rounded border border-cyan-500/20 px-2 py-0.5 text-[9px] text-cyan-100/70 transition-colors hover:border-cyan-400/45 hover:text-cyan-50"
               >
                 Download JSON
               </button>
               <button
                 type="button"
-                onClick={handleClearOpenClawConsole}
+                onClick={handleClearHO3DConsole}
                 className="rounded border border-cyan-500/20 px-2 py-0.5 text-[9px] text-cyan-100/70 transition-colors hover:border-cyan-400/45 hover:text-cyan-50"
               >
                 Clear
@@ -5198,7 +5198,7 @@ export function OfficeScreen({
               <button
                 type="button"
                 onClick={() =>
-                  setOpenClawConsoleCollapsed((previous) => !previous)
+                  setHO3DConsoleCollapsed((previous) => !previous)
                 }
                 className="rounded border border-cyan-500/20 px-2 py-0.5 text-[9px] text-cyan-100/70 transition-colors hover:border-cyan-400/45 hover:text-cyan-50"
               >
@@ -5214,7 +5214,7 @@ export function OfficeScreen({
                   type="text"
                   value={openClawConsoleSearch}
                   onChange={(event) =>
-                    setOpenClawConsoleSearch(event.target.value)
+                    setHO3DConsoleSearch(event.target.value)
                   }
                   placeholder="Search logs, payloads, thinking, user text."
                   className="min-w-0 flex-1 rounded border border-cyan-500/20 bg-black/35 px-2 py-1 text-[10px] normal-case tracking-normal text-cyan-50 placeholder:text-cyan-100/30 focus:border-cyan-400/40 focus:outline-none"
@@ -5222,7 +5222,7 @@ export function OfficeScreen({
                 {openClawConsoleSearch ? (
                   <button
                     type="button"
-                    onClick={() => setOpenClawConsoleSearch("")}
+                    onClick={() => setHO3DConsoleSearch("")}
                     className="rounded border border-cyan-500/20 px-2 py-1 text-[9px] uppercase tracking-[0.16em] text-cyan-100/70 transition-colors hover:border-cyan-400/45 hover:text-cyan-50"
                   >
                     Reset
@@ -5233,10 +5233,10 @@ export function OfficeScreen({
             {openClawLiveStateMatchesSearch ? (
               <div className="rounded border border-cyan-500/10 bg-cyan-950/10 p-2">
                 <div className="mb-1 text-[9px] uppercase tracking-[0.16em] text-cyan-300/70">
-                  Live OpenClaw State
+                  Live HO3D State
                 </div>
                 <pre className="whitespace-pre-wrap break-words text-cyan-100/80">
-                  {renderOpenClawHighlightedText(
+                  {renderHO3DHighlightedText(
                     openClawLiveStateText,
                     openClawConsoleSearch,
                   )}
@@ -5244,20 +5244,20 @@ export function OfficeScreen({
               </div>
             ) : (
               <div className="rounded border border-cyan-500/10 bg-cyan-950/10 p-2 text-cyan-100/45">
-                Live OpenClaw state does not match the current search.
+                Live HO3D state does not match the current search.
               </div>
             )}
             <div className="text-[9px] uppercase tracking-[0.16em] text-cyan-300/70">
-              Raw OpenClaw Gateway Events
+              Raw HO3D Gateway Events
             </div>
-            {filteredOpenClawLogEntries.length === 0 ? (
+            {filteredHO3DLogEntries.length === 0 ? (
               <div className="rounded border border-cyan-500/10 bg-cyan-950/10 p-2 text-cyan-100/45">
                 {openClawLogEntries.length === 0
-                  ? "No OpenClaw gateway events received yet."
-                  : "No OpenClaw events match the current search."}
+                  ? "No HO3D gateway events received yet."
+                  : "No HO3D events match the current search."}
               </div>
             ) : (
-              filteredOpenClawLogEntries.map((entry) => {
+              filteredHO3DLogEntries.map((entry) => {
                 const isUserMessage = entry.role === "user";
                 return (
                   <div
@@ -5276,7 +5276,7 @@ export function OfficeScreen({
                             : "text-cyan-300/75"
                         }`}
                       >
-                        {renderOpenClawHighlightedText(
+                        {renderHO3DHighlightedText(
                           `[${entry.timestamp}] ${entry.eventName} / ${entry.eventKind}`,
                           openClawConsoleSearch,
                         )}
@@ -5294,7 +5294,7 @@ export function OfficeScreen({
                       ) : null}
                     </div>
                     <div className="mt-1 whitespace-pre-wrap break-words text-cyan-100/55">
-                      {renderOpenClawHighlightedText(
+                      {renderHO3DHighlightedText(
                         entry.summary,
                         openClawConsoleSearch,
                       )}
@@ -5305,7 +5305,7 @@ export function OfficeScreen({
                           User / Message Text
                         </div>
                         <div className="mt-1 whitespace-pre-wrap break-words">
-                          {renderOpenClawHighlightedText(
+                          {renderHO3DHighlightedText(
                             entry.messageText,
                             openClawConsoleSearch,
                           )}
@@ -5318,7 +5318,7 @@ export function OfficeScreen({
                           Thinking
                         </div>
                         <div className="mt-1 whitespace-pre-wrap break-words">
-                          {renderOpenClawHighlightedText(
+                          {renderHO3DHighlightedText(
                             entry.thinkingText,
                             openClawConsoleSearch,
                           )}
@@ -5331,7 +5331,7 @@ export function OfficeScreen({
                           Stream
                         </div>
                         <div className="mt-1 whitespace-pre-wrap break-words">
-                          {renderOpenClawHighlightedText(
+                          {renderHO3DHighlightedText(
                             entry.streamText,
                             openClawConsoleSearch,
                           )}
@@ -5344,7 +5344,7 @@ export function OfficeScreen({
                           Tool Output
                         </div>
                         <div className="mt-1 whitespace-pre-wrap break-words">
-                          {renderOpenClawHighlightedText(
+                          {renderHO3DHighlightedText(
                             entry.toolText,
                             openClawConsoleSearch,
                           )}
@@ -5356,7 +5356,7 @@ export function OfficeScreen({
                         Raw Payload
                       </summary>
                       <pre className="mt-1 whitespace-pre-wrap break-words text-cyan-100/45">
-                        {renderOpenClawHighlightedText(
+                        {renderHO3DHighlightedText(
                           entry.payloadText,
                           openClawConsoleSearch,
                         )}

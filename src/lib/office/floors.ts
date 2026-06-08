@@ -1,5 +1,5 @@
 export type FloorProvider =
-  | "openclaw"
+  | "ho3d"
   | "hermes"
   | "paperclip"
   | "custom"
@@ -10,7 +10,7 @@ export type FloorZone = "building" | "outside";
 
 export type FloorId =
   | "lobby"
-  | "openclaw-ground"
+  | "ho3d-ground"
   | "hermes-first"
   | "local-runtime"
   | "ho3d-runtime"
@@ -46,15 +46,15 @@ export const OFFICE_FLOORS: readonly FloorDefinition[] = [
     runtimeProfileId: null,
   },
   {
-    id: "openclaw-ground",
-    label: "OpenClaw Floor",
-    shortLabel: "OpenClaw",
-    provider: "openclaw",
+    id: "ho3d-ground",
+    label: "HO3D Floor",
+    shortLabel: "HO3D",
+    provider: "ho3d",
     kind: "runtime",
     zone: "building",
     enabled: true,
     sortOrder: 10,
-    runtimeProfileId: "openclaw-default",
+    runtimeProfileId: "ho3d-default",
   },
   {
     id: "hermes-first",

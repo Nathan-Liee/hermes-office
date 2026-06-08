@@ -6,8 +6,8 @@ import type { RemovableSkillSource, SkillRemoveRequest } from "@/lib/skills/type
 export const runtime = "nodejs";
 
 const REMOVABLE_SOURCES = new Set<RemovableSkillSource>([
-  "openclaw-managed",
-  "openclaw-workspace",
+  "ho3d-managed",
+  "ho3d-workspace",
 ]);
 
 const normalizeRequired = (value: unknown, field: string): string => {

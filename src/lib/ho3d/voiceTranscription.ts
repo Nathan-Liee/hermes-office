@@ -5,10 +5,10 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 
-const CONFIGURED_OPENCLAW_PACKAGE_ROOT = process.env.OPENCLAW_PACKAGE_ROOT?.trim() ?? "";
+const CONFIGURED_HO3D_PACKAGE_ROOT = process.env.HO3D_PACKAGE_ROOT?.trim() ?? "";
 
-const OPENCLAW_DIST_INDEX_RELATIVE_PATH = path.join("dist", "index.js");
-const OPENCLAW_DIST_DIRECTORY_RELATIVE_PATH = "dist";
+const HO3D_DIST_INDEX_RELATIVE_PATH = path.join("dist", "index.js");
+const HO3D_DIST_DIRECTORY_RELATIVE_PATH = "dist";
 const AUDIO_KIND = "audio.transcription";
 const DEFAULT_VOICE_MIME = "audio/webm";
 const DEFAULT_VOICE_BASENAME = "voice-note";
@@ -23,7 +23,7 @@ const MIME_EXTENSION_MAP: Record<string, string> = {
   "audio/x-wav": ".wav",
 };
 
-type OpenClawConfig = {
+type HO3DConfig = {
   tools?: {
     media?: {
       audio?: {
@@ -54,14 +54,14 @@ type RunCapabilityResult = {
   decision?: MediaUnderstandingDecision;
 };
 
-type OpenClawConfigModule = {
-  t: () => OpenClawConfig;
+type HO3DConfigModule = {
+  t: () => HO3DConfig;
 };
 
-type OpenClawRunnerModule = {
+type HO3DRunnerModule = {
   a: (params: {
     capability: "audio";
-    cfg: OpenClawConfig;
+    cfg: HO3DConfig;
     ctx: Record<string, unknown>;
     attachments: {
       cleanup: () => Promise<void>;
@@ -77,15 +77,15 @@ type OpenClawRunnerModule = {
   t: () => unknown;
 };
 
-type OpenClawTranscriptionSdk = {
-  loadConfig: OpenClawConfigModule["t"];
-  runCapability: OpenClawRunnerModule["a"];
-  createMediaAttachmentCache: OpenClawRunnerModule["n"];
-  normalizeMediaAttachments: OpenClawRunnerModule["r"];
-  buildProviderRegistry: OpenClawRunnerModule["t"];
+type HO3DTranscriptionSdk = {
+  loadConfig: HO3DConfigModule["t"];
+  runCapability: HO3DRunnerModule["a"];
+  createMediaAttachmentCache: HO3DRunnerModule["n"];
+  normalizeMediaAttachments: HO3DRunnerModule["r"];
+  buildProviderRegistry: HO3DRunnerModule["t"];
 };
 
-export type OpenClawVoiceTranscriptionResult = {
+export type HO3DVoiceTranscriptionResult = {
   transcript: string | null;
   provider: string | null;
   model: string | null;
@@ -93,13 +93,13 @@ export type OpenClawVoiceTranscriptionResult = {
   ignored: boolean;
 };
 
-let sdkPromise: Promise<OpenClawTranscriptionSdk> | null = null;
+let sdkPromise: Promise<HO3DTranscriptionSdk> | null = null;
 const nativeImport = new Function(
   "specifier",
   "return import(specifier);",
 ) as (specifier: string) => Promise<unknown>;
 
-const resolveInstalledOpenClawPackageRoot = (): string | null => {
+const resolveInstalledHO3DPackageRoot = (): string | null => {
   const packageDirName = ["open", "claw"].join("");
   const startDir = process.cwd();
   const visited = new Set<string>();
@@ -108,7 +108,7 @@ const resolveInstalledOpenClawPackageRoot = (): string | null => {
   while (cursor && !visited.has(cursor)) {
     visited.add(cursor);
     const candidate = path.join(cursor, "node_modules", packageDirName);
-    const indexPath = path.join(candidate, OPENCLAW_DIST_INDEX_RELATIVE_PATH);
+    const indexPath = path.join(candidate, HO3D_DIST_INDEX_RELATIVE_PATH);
     if (fs.existsSync(indexPath)) {
       return candidate;
     }
@@ -154,7 +154,7 @@ export const sanitizeVoiceFileName = (
 export const buildVoiceTranscriptionErrorMessage = (
   decision: MediaUnderstandingDecision | null | undefined,
 ): string => {
-  if (!decision) return "OpenClaw did not return a transcript.";
+  if (!decision) return "HO3D did not return a transcript.";
   const outcome = decision.outcome?.trim() || "unknown";
   const reasons = (decision.attachments ?? [])
     .flatMap((attachment) => attachment.attempts ?? [])
@@ -163,15 +163,15 @@ export const buildVoiceTranscriptionErrorMessage = (
   const detail = reasons[0] ? ` ${reasons[0]}` : "";
   switch (outcome) {
     case "disabled":
-      return `OpenClaw audio transcription is disabled.${detail}`.trim();
+      return `HO3D audio transcription is disabled.${detail}`.trim();
     case "no-attachment":
-      return "OpenClaw did not receive any audio to transcribe.";
+      return "HO3D did not receive any audio to transcribe.";
     case "scope-deny":
-      return `OpenClaw blocked audio transcription for this request.${detail}`.trim();
+      return `HO3D blocked audio transcription for this request.${detail}`.trim();
     case "skipped":
-      return `OpenClaw skipped audio transcription.${detail}`.trim();
+      return `HO3D skipped audio transcription.${detail}`.trim();
     default:
-      return `OpenClaw did not return a transcript.${detail}`.trim();
+      return `HO3D did not return a transcript.${detail}`.trim();
   }
 };
 
@@ -196,38 +196,38 @@ export const shouldIgnoreVoiceTranscription = (params: {
   );
 };
 
-const resolveOpenClawPackageRoot = (): string => {
-  const configuredCandidate = CONFIGURED_OPENCLAW_PACKAGE_ROOT;
+const resolveHO3DPackageRoot = (): string => {
+  const configuredCandidate = CONFIGURED_HO3D_PACKAGE_ROOT;
   if (configuredCandidate) {
-    const indexPath = path.join(configuredCandidate, OPENCLAW_DIST_INDEX_RELATIVE_PATH);
+    const indexPath = path.join(configuredCandidate, HO3D_DIST_INDEX_RELATIVE_PATH);
     if (fs.existsSync(indexPath)) return configuredCandidate;
-    throw new Error("OPENCLAW_PACKAGE_ROOT does not point to a valid OpenClaw installation.");
+    throw new Error("HO3D_PACKAGE_ROOT does not point to a valid HO3D installation.");
   }
 
-  const installedCandidate = resolveInstalledOpenClawPackageRoot();
+  const installedCandidate = resolveInstalledHO3DPackageRoot();
   if (installedCandidate) {
-    const indexPath = path.join(installedCandidate, OPENCLAW_DIST_INDEX_RELATIVE_PATH);
+    const indexPath = path.join(installedCandidate, HO3D_DIST_INDEX_RELATIVE_PATH);
     if (fs.existsSync(indexPath)) return installedCandidate;
   }
 
   throw new Error(
-    "OpenClaw could not be resolved from the current Node runtime. Install the `openclaw` package or set OPENCLAW_PACKAGE_ROOT.",
+    "HO3D could not be resolved from the current Node runtime. Install the `ho3d` package or set HO3D_PACKAGE_ROOT.",
   );
 };
 
-const loadOpenClawSdk = async (): Promise<OpenClawTranscriptionSdk> => {
+const loadHO3DSdk = async (): Promise<HO3DTranscriptionSdk> => {
   if (sdkPromise) return sdkPromise;
   sdkPromise = (async () => {
-    const packageRoot = resolveOpenClawPackageRoot();
-    const distDirectory = path.join(packageRoot, OPENCLAW_DIST_DIRECTORY_RELATIVE_PATH);
+    const packageRoot = resolveHO3DPackageRoot();
+    const distDirectory = path.join(packageRoot, HO3D_DIST_DIRECTORY_RELATIVE_PATH);
     const distEntries = (await fsp.readdir(distDirectory)).sort();
     const configCandidates = distEntries.filter((entry) => /^config-.*\.js$/.test(entry));
-    let loadConfig: OpenClawTranscriptionSdk["loadConfig"] | null = null;
+    let loadConfig: HO3DTranscriptionSdk["loadConfig"] | null = null;
 
     for (const candidate of configCandidates) {
       const configModule = (await nativeImport(
         pathToFileURL(path.join(distDirectory, candidate)).href,
-      )) as Partial<OpenClawConfigModule>;
+      )) as Partial<HO3DConfigModule>;
       if (typeof configModule.t === "function") {
         loadConfig = configModule.t;
         break;
@@ -235,7 +235,7 @@ const loadOpenClawSdk = async (): Promise<OpenClawTranscriptionSdk> => {
     }
 
     if (!loadConfig) {
-      throw new Error("The installed OpenClaw runtime does not expose a loadConfig() module.");
+      throw new Error("The installed HO3D runtime does not expose a loadConfig() module.");
     }
 
     const runnerCandidates = distEntries.filter((entry) => /^runner-.*\.js$/.test(entry));
@@ -244,7 +244,7 @@ const loadOpenClawSdk = async (): Promise<OpenClawTranscriptionSdk> => {
       const runnerModule = (await nativeImport(
         pathToFileURL(path.join(distDirectory, candidate)).href,
       )) as Partial<
-        OpenClawRunnerModule
+        HO3DRunnerModule
       >;
       if (
         typeof runnerModule.a === "function" &&
@@ -262,7 +262,7 @@ const loadOpenClawSdk = async (): Promise<OpenClawTranscriptionSdk> => {
       }
     }
 
-    throw new Error("The installed OpenClaw runtime does not expose the audio transcription runner.");
+    throw new Error("The installed HO3D runtime does not expose the audio transcription runner.");
   })().catch((error) => {
     sdkPromise = null;
     throw error;
@@ -270,15 +270,15 @@ const loadOpenClawSdk = async (): Promise<OpenClawTranscriptionSdk> => {
   return sdkPromise;
 };
 
-export const transcribeVoiceWithOpenClaw = async (params: {
+export const transcribeVoiceWithHO3D = async (params: {
   buffer: Buffer;
   fileName?: string | null;
   mimeType?: string | null;
-}): Promise<OpenClawVoiceTranscriptionResult> => {
-  const sdk = await loadOpenClawSdk();
+}): Promise<HO3DVoiceTranscriptionResult> => {
+  const sdk = await loadHO3DSdk();
   const cfg = sdk.loadConfig();
   if (cfg.tools?.media?.audio?.enabled === false) {
-    throw new Error("OpenClaw audio transcription is disabled.");
+    throw new Error("HO3D audio transcription is disabled.");
   }
 
   const mimeType = normalizeVoiceMimeType(params.mimeType);

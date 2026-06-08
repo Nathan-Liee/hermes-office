@@ -5,19 +5,19 @@ import { CheckCircle2, ExternalLink } from "lucide-react";
 
 const prerequisites = [
   {
-    label: "OpenClaw installed",
+    label: "HO3D installed",
     detail: "Install via npm, pnpm, or from source",
-    link: "https://docs.openclaw.ai",
+    link: "https://docs.ho3d.ai",
     linkLabel: "Installation docs",
   },
   {
     label: "Gateway running",
-    detail: "Start with: openclaw gateway start",
-    command: "openclaw gateway start",
+    detail: "Start with: ho3d gateway start",
+    command: "ho3d gateway start",
   },
   {
     label: "Gateway URL and token",
-    detail: "Found in ~/.openclaw/openclaw.json or your remote setup",
+    detail: "Found in ~/.ho3d/ho3d.json or your remote setup",
   },
   {
     label: "Node.js 20+",
@@ -31,7 +31,7 @@ export const PrerequisitesStep = () => (
   <div className="space-y-2.5">
     <p className="text-[13px] leading-5 text-white/70">
       Make sure you have these ready before connecting. If you already have
-      OpenClaw running, you can skip this step.
+      HO3D running, you can skip this step.
     </p>
 
     <div className="space-y-1.5">
@@ -68,12 +68,12 @@ export const PrerequisitesStep = () => (
     <p className="text-[10px] leading-4 text-white/40">
       Need help? Check{" "}
       <a
-        href="https://docs.openclaw.ai"
+        href="https://docs.ho3d.ai"
         target="_blank"
         rel="noopener noreferrer"
         className="text-amber-300/70 hover:text-amber-200"
       >
-        docs.openclaw.ai
+        docs.ho3d.ai
       </a>{" "}
       or{" "}
       <a

@@ -27,7 +27,7 @@ const HERMES_RUNTIME_CAPABILITIES: ReadonlySet<RuntimeCapability> = new Set([
   "agent-roles",
 ]);
 
-/* Inlined from the deleted @/lib/runtime/openclaw/normalizeGatewayEvent */
+/* Inlined from the deleted @/lib/runtime/ho3d/normalizeGatewayEvent */
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value && typeof value === "object" && !Array.isArray(value));
 

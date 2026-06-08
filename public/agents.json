@@ -1,0 +1,26 @@
+[
+  {
+    "id": "agent-hermes",
+    "name": "Hermes",
+    "avatar": null,
+    "avatarSeed": "hermes-default",
+    "role": "assistant",
+    "description": "Main Hermes agent — general purpose assistant"
+  },
+  {
+    "id": "agent-athena",
+    "name": "Athena",
+    "avatar": null,
+    "avatarSeed": "athena-default",
+    "role": "assistant",
+    "description": "Strategic advisor & research analyst"
+  },
+  {
+    "id": "agent-midas",
+    "name": "Midas",
+    "avatar": null,
+    "avatarSeed": "midas-default",
+    "role": "assistant",
+    "description": "Financial analysis & data processing"
+  }
+]

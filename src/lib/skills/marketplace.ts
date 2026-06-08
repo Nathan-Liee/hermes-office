@@ -168,21 +168,21 @@ const buildFallbackMetadata = (
   const source = skill.source.trim();
   const seed = hashString(`${normalizedKey}:${source}`);
   const category =
-    skill.bundled || source === "openclaw-bundled"
+    skill.bundled || source === "ho3d-bundled"
       ? "Built-in"
-      : source === "openclaw-managed"
+      : source === "ho3d-managed"
         ? "Installed"
-        : source === "openclaw-workspace"
+        : source === "ho3d-workspace"
           ? "Workspace"
-          : source === "openclaw-extra"
+          : source === "ho3d-extra"
             ? "Community"
             : "Automation";
   const trustLabel =
-    skill.bundled || source === "openclaw-bundled"
+    skill.bundled || source === "ho3d-bundled"
       ? "Verified"
-      : source === "openclaw-managed"
+      : source === "ho3d-managed"
         ? "Managed"
-        : source === "openclaw-workspace"
+        : source === "ho3d-workspace"
           ? "Workspace"
           : "Community";
   return {
@@ -192,7 +192,7 @@ const buildFallbackMetadata = (
       `${titleCaseWords(skill.name)} capability pack.`,
     trustLabel,
     capabilities: buildFallbackCapabilities(skill),
-    featured: skill.bundled || source === "openclaw-managed",
+    featured: skill.bundled || source === "ho3d-managed",
     rating: 4.2 + (seed % 7) / 10,
     installs: 400 + (seed % 9500),
   };

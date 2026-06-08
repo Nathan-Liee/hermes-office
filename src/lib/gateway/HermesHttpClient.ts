@@ -5,6 +5,38 @@
 // Drop-in replacement for GatewayBrowserClient (WebSocket).
 // Routes RPC methods to mock data or POST /api/hermes/...
 // ---------------------------------------------------------------------------
+import { appendPackagedSkillsToMarketplace } from "@/lib/skills/catalog";
+
+// ---------------------------------------------------------------------------
+// localStorage chat history helpers
+// ---------------------------------------------------------------------------
+const HISTORY_PREFIX = "ho3d-chat-";
+
+type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  text: string;
+  timestamp: number;
+};
+
+const loadChatHistory = (sessionKey: string): ChatMessage[] => {
+  try {
+    const raw = localStorage.getItem(`${HISTORY_PREFIX}${sessionKey}`);
+    return raw ? (JSON.parse(raw) as ChatMessage[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveChatMessage = (sessionKey: string, msg: ChatMessage) => {
+  try {
+    const history = loadChatHistory(sessionKey);
+    history.push(msg);
+    localStorage.setItem(`${HISTORY_PREFIX}${sessionKey}`, JSON.stringify(history));
+  } catch {
+    // localStorage full or unavailable
+  }
+};
 
 type HermesHelloOk = {
   adapterType?: "hermes";
@@ -16,37 +48,32 @@ type PendingReq = {
 };
 
 // ---------------------------------------------------------------------------
-// Mock agent data for demo — 3 agents in the office
+// Agent config — loaded from /agents.json (public file)
 // ---------------------------------------------------------------------------
-const MOCK_AGENTS = [
-  {
-    id: "agent-athena",
-    name: "Athena",
-    avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%236366f1'/%3E%3Ctext x='50' y='68' font-size='48' text-anchor='middle' fill='white'%3E🦉%3C/text%3E%3C/svg%3E",
-    role: "assistant",
-    description: "Strategic advisor & research analyst",
-    status: "online",
-    model: "claude-sonnet-4-20250514",
-  },
-  {
-    id: "agent-hermes",
-    name: "Hermes",
-    avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%23f59e0b'/%3E%3Ctext x='50' y='68' font-size='48' text-anchor='middle' fill='white'%3E⚡%3C/text%3E%3C/svg%3E",
-    role: "assistant",
-    description: "Hermes agent — general purpose assistant",
-    status: "online",
-    model: "claude-sonnet-4-20250514",
-  },
-  {
-    id: "agent-midas",
-    name: "Midas",
-    avatar: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='48' fill='%2310b981'/%3E%3Ctext x='50' y='68' font-size='48' text-anchor='middle' fill='white'%3E💰%3C/text%3E%3C/svg%3E",
-    role: "assistant",
-    description: "Financial analysis & data processing",
-    status: "online",
-    model: "claude-sonnet-4-20250514",
-  },
-];
+let agentConfigCache: AgentConfigEntry[] | null = null;
+
+type AgentConfigEntry = {
+  id: string;
+  name: string;
+  avatar?: string | null;
+  avatarSeed?: string;
+  role?: string;
+  description?: string;
+};
+
+const fetchAgentConfig = async (): Promise<AgentConfigEntry[]> => {
+  if (agentConfigCache) return agentConfigCache;
+  try {
+    const res = await fetch("/agents.json");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    agentConfigCache = (await res.json()) as AgentConfigEntry[];
+    return agentConfigCache!;
+  } catch (err) {
+    console.warn("[HermesHttpClient] Failed to load agents.json:", err);
+    // Fallback: one default agent
+    return [{ id: "agent-hermes", name: "Hermes", role: "assistant", description: "Default agent" }];
+  }
+};
 
 class HermesHttpClient {
   private pending = new Map<string, PendingReq>();
@@ -106,7 +133,7 @@ class HermesHttpClient {
     }
 
     // Handle mock methods locally
-    const mockResult = this.tryMock(method, params);
+    const mockResult = await this.tryMock(method, params);
     if (mockResult !== undefined) {
       return mockResult as T;
     }
@@ -122,13 +149,24 @@ class HermesHttpClient {
   // -----------------------------------------------------------------------
   // Mock RPC responses
   // -----------------------------------------------------------------------
-  private tryMock(method: string, params: unknown): unknown {
+  private async tryMock(method: string, params: unknown): Promise<unknown> {
     switch (method) {
       case "connect":
         return { adapterType: "hermes", protocol: 3 };
 
-      case "agents.list":
-        return { agents: MOCK_AGENTS };
+      case "agents.list": {
+        const agents = await fetchAgentConfig();
+        return {
+          agents: agents.map((a) => ({
+            id: a.id,
+            name: a.name,
+            role: a.role || "assistant",
+            description: a.description || "",
+            status: "online",
+            model: "claude-sonnet-4-20250514",
+          })),
+        };
+      }
 
       case "sessions.preview":
         return { sessions: [] };
@@ -136,11 +174,36 @@ class HermesHttpClient {
       case "sessions.list":
         return { sessions: [] };
 
-      case "skills.status":
-        return { skills: [] };
+      case "skills.status": {
+        return {
+          workspaceDir: "/",
+          managedSkillsDir: "/",
+          skills: appendPackagedSkillsToMarketplace([]),
+        };
+      }
 
-      case "chat.history":
-        return { messages: [] };
+      case "skills.install":
+        return { ok: true, message: "HO3D local: skill install acknowledged (local mode)", stdout: "", stderr: "", code: 0 };
+
+      case "skills.update":
+        return { ok: true, skillKey: typeof params === "object" && params !== null ? (params as Record<string, unknown>).skillKey as string : "", config: {} };
+
+      case "skills.remove":
+        return { removed: true, removedPath: "", source: "openclaw-workspace" };
+
+      case "skills.setAgentSkillEnabled":
+        return { ok: true };
+
+      case "chat.history": {
+        const key = typeof params === "object" && params !== null ? (params as Record<string, unknown>).sessionKey as string || "" : "";
+        const messages = loadChatHistory(key);
+        return { messages: messages.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.text,
+          timestamp: m.timestamp,
+        })) };
+      }
 
       case "models.list":
         return {
@@ -150,8 +213,10 @@ class HermesHttpClient {
           ],
         };
 
-      case "presence.list":
-        return { agents: MOCK_AGENTS.map((a) => ({ agentId: a.id, status: a.status })) };
+      case "presence.list": {
+        const agentsList = await fetchAgentConfig();
+        return { agents: agentsList.map((a) => ({ agentId: a.id, status: "online" })) };
+      }
 
       case "ping":
         return { pong: true };
@@ -185,8 +250,12 @@ class HermesHttpClient {
       const sessionKey = typeof params?.sessionKey === "string" ? params.sessionKey : "";
       const text = typeof params?.text === "string" ? params.text : "";
       const agentId = typeof params?.agentId === "string" ? params.agentId : "";
+      const now = Date.now();
 
-      // Extract agent name from session key or default
+      // Save user message to localStorage
+      const userMsgId = crypto.randomUUID();
+      saveChatMessage(sessionKey, { id: userMsgId, role: "user", text, timestamp: now });
+
       const agentName = agentId || "assistant";
 
       const body = JSON.stringify({
@@ -212,9 +281,17 @@ class HermesHttpClient {
       }
 
       const data = await response.json();
+      const assistantText = data?.choices?.[0]?.message?.content || "";
+      const assistantMsgId = crypto.randomUUID();
+      saveChatMessage(sessionKey, {
+        id: assistantMsgId,
+        role: "assistant",
+        text: assistantText,
+        timestamp: Date.now(),
+      });
       return {
         ok: true,
-        messageId: crypto.randomUUID(),
+        messageId: assistantMsgId,
       };
     } catch (err) {
       console.error("[HermesHttpClient] chat.send failed:", err);

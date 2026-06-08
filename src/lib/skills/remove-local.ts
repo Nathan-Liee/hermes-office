@@ -40,7 +40,7 @@ const resolveAllowedRoot = (params: {
   workspaceDir: string;
   managedSkillsDir: string;
 }): string => {
-  if (params.source === "openclaw-managed") {
+  if (params.source === "ho3d-managed") {
     return params.managedSkillsDir;
   }
   return path.join(params.workspaceDir, "skills");

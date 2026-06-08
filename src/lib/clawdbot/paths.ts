@@ -3,8 +3,8 @@ import os from "node:os";
 import path from "node:path";
 
 const LEGACY_STATE_DIRNAMES = [".clawdbot", ".moltbot"] as const;
-const NEW_STATE_DIRNAME = ".openclaw";
-const CONFIG_FILENAME = "openclaw.json";
+const NEW_STATE_DIRNAME = ".ho3d";
+const CONFIG_FILENAME = "ho3d.json";
 const LEGACY_CONFIG_FILENAMES = ["clawdbot.json", "moltbot.json"] as const;
 
 const resolveDefaultHomeDir = (homedir: () => string = os.homedir): string => {
@@ -39,7 +39,7 @@ export const resolveStateDir = (
   homedir: () => string = os.homedir
 ): string => {
   const override =
-    env.OPENCLAW_STATE_DIR?.trim() ||
+    env.HO3D_STATE_DIR?.trim() ||
     env.MOLTBOT_STATE_DIR?.trim() ||
     env.CLAWDBOT_STATE_DIR?.trim();
   if (override) return resolveUserPath(override, homedir);
@@ -63,7 +63,7 @@ export const resolveConfigPathCandidates = (
   homedir: () => string = os.homedir
 ): string[] => {
   const explicit =
-    env.OPENCLAW_CONFIG_PATH?.trim() ||
+    env.HO3D_CONFIG_PATH?.trim() ||
     env.MOLTBOT_CONFIG_PATH?.trim() ||
     env.CLAWDBOT_CONFIG_PATH?.trim();
   if (explicit) return [resolveUserPath(explicit, homedir)];
@@ -71,7 +71,7 @@ export const resolveConfigPathCandidates = (
   const defaultHome = resolveDefaultHomeDir(homedir);
   const candidates: string[] = [];
   const stateDir =
-    env.OPENCLAW_STATE_DIR?.trim() ||
+    env.HO3D_STATE_DIR?.trim() ||
     env.MOLTBOT_STATE_DIR?.trim() ||
     env.CLAWDBOT_STATE_DIR?.trim();
   if (stateDir) {

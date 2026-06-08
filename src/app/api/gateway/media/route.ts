@@ -46,7 +46,7 @@ const resolveAndValidateLocalMediaPath = (raw: string): { resolved: string; mime
 
   const resolved = path.resolve(expanded);
 
-  const allowedRoot = path.join(os.homedir(), ".openclaw");
+  const allowedRoot = path.join(os.homedir(), ".ho3d");
   const allowedPrefix = `${allowedRoot}${path.sep}`;
   if (!(resolved === allowedRoot || resolved.startsWith(allowedPrefix))) {
     throw new Error(`Refusing to read media outside ${allowedRoot}`);
@@ -96,7 +96,7 @@ export async function GET(request: Request) {
     const rawPath = (searchParams.get("path") ?? "").trim();
 
     const { resolved, mime } = resolveAndValidateLocalMediaPath(rawPath);
-    const allowedRoot = path.join(os.homedir(), ".openclaw");
+    const allowedRoot = path.join(os.homedir(), ".ho3d");
     const { bytes, size } = await readLocalMedia(resolved, allowedRoot);
     const body = new Blob([Uint8Array.from(bytes)], { type: mime });
     return new Response(body, {
