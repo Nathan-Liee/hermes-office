@@ -33,195 +33,7 @@ const gatewayDebugLog = (message: string, details?: Record<string, unknown>) => 
   console.info("[gateway-client]", message);
 };
 
-// ---------------------------------------------------------------------------
-// Simple browser WebSocket client – replaces the deleted OpenClaw
-// GatewayBrowserClient.  Handles the connect handshake and JSON
-// request/response framing.  Device-auth is off (token-only) for now.
-// ---------------------------------------------------------------------------
-
-type GatewayHelloOk = {
-  adapterType?: "hermes";
-};
-
-type GatewayBrowserGapInfo = {
-  expected: number;
-  received: number;
-};
-
-type PendingReq = {
-  resolve: (value: any) => void;
-  reject: (error: Error) => void;
-};
-
-class GatewayBrowserClient {
-  private ws: WebSocket | null = null;
-  private pending = new Map<string, PendingReq>();
-  private _closed = false;
-  private _connected = false;
-  private _seq = 0;
-  private url: string;
-  private token: string;
-  private onHello: (hello: GatewayHelloOk) => void;
-  private onEvent: (event: EventFrame) => void;
-  private onClose: (info: { code: number; reason: string }) => void;
-  private onGap: (info: GatewayBrowserGapInfo) => void;
-
-  get connected() {
-    return this._connected && this.ws?.readyState === WebSocket.OPEN;
-  }
-
-  constructor(opts: {
-    url: string;
-    token?: string;
-    authScopeKey?: string;
-    clientName?: string;
-    disableDeviceAuth?: boolean;
-    onHello: (hello: GatewayHelloOk) => void;
-    onEvent: (event: EventFrame) => void;
-    onClose: (info: { code: number; reason: string }) => void;
-    onGap: (info: GatewayBrowserGapInfo) => void;
-  }) {
-    this.url = opts.url;
-    this.token = opts.token || "";
-    this.onHello = opts.onHello;
-    this.onEvent = opts.onEvent;
-    this.onClose = opts.onClose;
-    this.onGap = opts.onGap;
-  }
-
-  start() {
-    if (this.ws) return;
-    const ws = new WebSocket(this.url);
-    this.ws = ws;
-
-    ws.onopen = () => {
-      ws.send(
-        JSON.stringify({
-          type: "req",
-          id: crypto.randomUUID(),
-          method: "connect",
-          params: {
-            minProtocol: 3,
-            maxProtocol: 3,
-            client: {
-              id: "openclaw-control-ui",
-              version: "dev",
-              platform: "web",
-              mode: "webchat",
-            },
-            role: "operator",
-            scopes: [
-              "operator.read",
-              "operator.admin",
-              "operator.approvals",
-              "operator.pairing",
-            ],
-            ...(this.token ? { auth: { token: this.token } } : {}),
-            userAgent: "browser",
-            locale: "en-US",
-          },
-        }),
-      );
-    };
-
-    ws.onmessage = (event) => {
-      const raw =
-        typeof event.data === "string"
-          ? event.data
-          : event.data instanceof ArrayBuffer
-            ? new TextDecoder().decode(new Uint8Array(event.data))
-            : String(event.data);
-      const frame = parseGatewayFrame(raw);
-      if (!frame) return;
-
-      if (frame.type === "event") {
-        this._seq = frame.seq ?? this._seq;
-        this.onEvent(frame);
-        return;
-      }
-
-      if (frame.type === "res") {
-        // connect response
-        if (frame.ok) {
-          if (!this._connected) {
-            this._connected = true;
-            this.onHello((frame.payload as GatewayHelloOk) ?? {});
-          }
-        }
-        const pending = this.pending.get(frame.id);
-        if (pending) {
-          this.pending.delete(frame.id);
-          if (frame.ok) {
-            pending.resolve(frame.payload);
-          } else {
-            pending.reject(
-              new GatewayResponseError({
-                code: frame.error?.code ?? "UNKNOWN",
-                message: frame.error?.message ?? "Gateway request failed",
-                details: frame.error?.details,
-                retryable: frame.error?.retryable,
-                retryAfterMs: frame.error?.retryAfterMs,
-              }),
-            );
-          }
-        }
-      }
-    };
-
-    ws.onclose = (event) => {
-      this._connected = false;
-      this.onClose({ code: event.code, reason: event.reason });
-      this.rejectAllPending(
-        new Error(`Gateway closed (${event.code}): ${event.reason}`),
-      );
-      if (this.ws === ws) this.ws = null;
-    };
-
-    ws.onerror = () => {
-      this.rejectAllPending(new Error("Gateway connection error"));
-    };
-  }
-
-  stop() {
-    this._closed = true;
-    this._connected = false;
-    this.rejectAllPending(new Error("Gateway client stopped"));
-    if (this.ws) {
-      try {
-        this.ws.close();
-      } catch {
-        /* ignore */
-      }
-      this.ws = null;
-    }
-  }
-
-  async request<T = unknown>(method: string, params: unknown): Promise<T> {
-    if (!this.ws || this.ws.readyState !== WebSocket.OPEN || this._closed) {
-      throw new Error("Gateway is not connected.");
-    }
-    const id = crypto.randomUUID();
-    return new Promise<T>((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
-      try {
-        this.ws!.send(JSON.stringify({ type: "req", id, method, params }));
-      } catch (error) {
-        this.pending.delete(id);
-        reject(
-          error instanceof Error
-            ? error
-            : new Error("Failed to send gateway request."),
-        );
-      }
-    });
-  }
-
-  private rejectAllPending(error: Error) {
-    const entries = [...this.pending.values()];
-    this.pending.clear();
-    for (const p of entries) p.reject(error);
-  }
-}
+import { HermesHttpClient, type HermesHelloOk } from "@/lib/gateway/HermesHttpClient";
 
 const clearGatewayBrowserSessionStorage = () => {
   try {
@@ -433,7 +245,7 @@ export { GatewayResponseError } from "@/lib/gateway/errors";
 export type { GatewayErrorPayload } from "@/lib/gateway/errors";
 
 export class GatewayClient {
-  private client: GatewayBrowserClient | null = null;
+  private client: HermesHttpClient | null = null;
   private statusHandlers = new Set<StatusHandler>();
   private eventHandlers = new Set<EventHandler>();
   private gapHandlers = new Set<GapHandler>();
@@ -442,7 +254,7 @@ export class GatewayClient {
   private resolveConnect: (() => void) | null = null;
   private rejectConnect: ((error: Error) => void) | null = null;
   private manualDisconnect = false;
-  private lastHello: GatewayHelloOk | null = null;
+  private lastHello: HermesHelloOk | null = null;
   private _lastDisconnectCode: number | null = null;
 
   onStatus(handler: StatusHandler) {
@@ -483,7 +295,7 @@ export class GatewayClient {
       this.rejectConnect = reject;
     });
 
-    const nextClient = new GatewayBrowserClient({
+    const nextClient = new HermesHttpClient({
       url: options.gatewayUrl,
       token: options.token,
       authScopeKey: options.authScopeKey,

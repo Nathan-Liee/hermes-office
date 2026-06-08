@@ -1,13 +1,14 @@
 import {
+  chatWithAgent,
+  clearChatHistory,
+  loadChatHistory,
+  type ChatMessage,
+} from "@/lib/hermes/chat";
+import {
   isWebchatSessionMutationBlockedError,
   syncGatewaySessionSettings,
   type GatewayClient,
 } from "@/lib/gateway/GatewayClient";
-import {
-  buildAgentInstruction,
-  isMetaMarkdown,
-  parseMetaMarkdown,
-} from "@/lib/text/message-extract";
 import type { AgentState } from "@/features/agents/state/store";
 import { randomUUID } from "@/lib/uuid";
 import type { TranscriptAppendMeta } from "@/features/agents/state/transcript";
@@ -23,25 +24,6 @@ type GatewayClientLike = {
   call: (method: string, params: unknown) => Promise<unknown>;
 };
 
-const extractImmediateAssistantText = (payload: unknown): string | null => {
-  if (!payload || typeof payload !== "object") return null;
-  const value = payload as {
-    text?: unknown;
-    content?: unknown;
-    message?: unknown;
-  };
-  if (typeof value.text === "string" && value.text.trim()) {
-    return value.text.trim();
-  }
-  if (typeof value.content === "string" && value.content.trim()) {
-    return value.content.trim();
-  }
-  if (typeof value.message === "string" && value.message.trim()) {
-    return value.message.trim();
-  }
-  return null;
-};
-
 const resolveLatestTranscriptTimestampMs = (agent: AgentState): number | null => {
   const entries = agent.transcriptEntries;
   let latest: number | null = null;
@@ -55,29 +37,19 @@ const resolveLatestTranscriptTimestampMs = (agent: AgentState): number | null =>
   if (latest !== null) return latest;
   const lines = agent.outputLines;
   for (const line of lines) {
-    if (!isMetaMarkdown(line)) continue;
-    const parsed = parseMetaMarkdown(line);
+    const parsed = (() => {
+      try {
+        const obj = JSON.parse(line);
+        return obj;
+      } catch {
+        return null;
+      }
+    })();
     const ts = parsed?.timestamp;
     if (typeof ts !== "number" || !Number.isFinite(ts)) continue;
     latest = latest === null ? ts : Math.max(latest, ts);
   }
   return latest;
-};
-
-const resolveChatSendCompletionMode = (
-  payload: unknown,
-  optimisticRunId: string
-): "streaming-expected" | "terminal-immediate" => {
-  if (!payload || typeof payload !== "object") {
-    return "terminal-immediate";
-  }
-  const value = payload as { status?: unknown; runId?: unknown };
-  const status = typeof value.status === "string" ? value.status.trim().toLowerCase() : "";
-  const runId = typeof value.runId === "string" ? value.runId.trim() : "";
-  if ((status === "started" || status === "in_flight") && runId === optimisticRunId) {
-    return "streaming-expected";
-  }
-  return "terminal-immediate";
 };
 
 export async function sendChatMessageViaStudio(params: {
@@ -118,6 +90,7 @@ export async function sendChatMessageViaStudio(params: {
 
   const isResetCommand = /^\/(reset|new)(\s|$)/i.test(trimmed);
   if (isResetCommand) {
+    clearChatHistory(agentId);
     params.dispatch({
       type: "updateAgent",
       agentId,
@@ -206,13 +179,13 @@ export async function sendChatMessageViaStudio(params: {
       }
     }
 
-    const sendResult = await params.client.call("chat.send", {
-      sessionKey: params.sessionKey,
-      message: buildAgentInstruction({ message: trimmed }),
-      ...(attachments.length > 0 ? { attachments } : {}),
-      deliver: false,
-      idempotencyKey: runId,
-    });
+    // Build conversation history and send via Hermes API
+    const history = loadChatHistory(agentId);
+    const userMessage: ChatMessage = { role: "user", content: trimmed };
+    const assistantText = await chatWithAgent(
+      [...history, userMessage],
+      agentId,
+    );
 
     if (!createdSession) {
       params.dispatch({
@@ -222,46 +195,43 @@ export async function sendChatMessageViaStudio(params: {
       });
     }
 
-    if (resolveChatSendCompletionMode(sendResult, runId) === "terminal-immediate") {
-      const assistantText = extractImmediateAssistantText(sendResult);
-      if (assistantText) {
-        const assistantTimestamp = now();
-        params.dispatch({
-          type: "appendOutput",
-          agentId,
-          line: assistantText,
-          transcript: {
-            source: "local-send",
-            runId,
-            sessionKey: params.sessionKey,
-            timestampMs: assistantTimestamp,
-            role: "assistant",
-            kind: "assistant",
-          },
-        });
-        params.dispatch({
-          type: "updateAgent",
-          agentId,
-          patch: {
-            lastResult: assistantText,
-            latestPreview: assistantText,
-            lastAssistantMessageAt: assistantTimestamp,
-            lastActivityAt: assistantTimestamp,
-          },
-        });
-      }
+    if (assistantText) {
+      const assistantTimestamp = now();
+      params.dispatch({
+        type: "appendOutput",
+        agentId,
+        line: assistantText,
+        transcript: {
+          source: "local-send",
+          runId,
+          sessionKey: params.sessionKey,
+          timestampMs: assistantTimestamp,
+          role: "assistant",
+          kind: "assistant",
+        },
+      });
       params.dispatch({
         type: "updateAgent",
         agentId,
         patch: {
-          status: "idle",
-          runId: null,
-          runStartedAt: null,
-          streamText: null,
-          thinkingTrace: null,
+          lastResult: assistantText,
+          latestPreview: assistantText,
+          lastAssistantMessageAt: assistantTimestamp,
+          lastActivityAt: assistantTimestamp,
         },
       });
     }
+    params.dispatch({
+      type: "updateAgent",
+      agentId,
+      patch: {
+        status: "idle",
+        runId: null,
+        runStartedAt: null,
+        streamText: null,
+        thinkingTrace: null,
+      },
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Gateway error";
     params.dispatch({

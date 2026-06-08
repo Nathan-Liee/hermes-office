@@ -4726,16 +4726,10 @@ export function OfficeScreen({
             <GatewayConnectScreen
               gatewayUrl={gatewayUrl}
               token={token}
-              selectedAdapterType={selectedAdapterType}
-              activeAdapterType={activeAdapterType}
-              localGatewayDefaults={localGatewayDefaults}
               status={status}
               error={gatewayError}
-              showApprovalHint={didAttemptGatewayConnect}
               onGatewayUrlChange={setGatewayUrl}
               onTokenChange={setToken}
-              onAdapterTypeChange={setSelectedAdapterType}
-              onUseLocalDefaults={useLocalGatewayDefaults}
               onConnect={() => void connect()}
             />
           </div>
