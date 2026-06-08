@@ -16,7 +16,7 @@ import {
 // Studio settings are intentionally stored as a local JSON file for a single-user workflow.
 // That includes gateway connection details, so treat the state directory as plaintext secret
 // storage and document any changes to this threat model in README.md and SECURITY.md.
-const SETTINGS_DIRNAME = "claw3d";
+const SETTINGS_DIRNAME = "ho3d";
 const SETTINGS_FILENAME = "settings.json";
 const OPENCLAW_CONFIG_FILENAME = "openclaw.json";
 const DEFAULT_LOCAL_GATEWAY_PORT = 18789;
@@ -76,7 +76,7 @@ const normalizeAdapterType = (value: string | undefined): StudioGatewayAdapterTy
     normalized === "hermes" ||
     normalized === "demo" ||
     normalized === "local" ||
-    normalized === "claw3d" ||
+    normalized === "ho3d" ||
     normalized === "custom"
   ) {
     return normalized;

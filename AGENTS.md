@@ -14,7 +14,7 @@ Do not commit personal, environment-specific, or secret instructions to this rep
 
 ### Service overview
 
-Claw3D is a Next.js 16 frontend (TypeScript, React 19, Three.js, Phaser) for Hermes. It runs a custom Node.js server (`server/index.js`) that communicates with Hermes via the Hermes API. No database or Docker is required. The only hard system dependency is Node.js 20+ with npm 10+.
+HO3D is a Next.js 16 frontend (TypeScript, React 19, Three.js, Phaser) for Hermes. It runs a custom Node.js server (`server/index.js`) that communicates with Hermes via the Hermes API. No database or Docker is required. The only hard system dependency is Node.js 20+ with npm 10+.
 
 ### Running the app
 

@@ -12,7 +12,7 @@ export type TaskBoardStatus = (typeof TASK_BOARD_STATUSES)[number];
 
 export const TASK_BOARD_SOURCES = [
   "openclaw_event",
-  "claw3d_manual",
+  "ho3d_manual",
   "playbook",
   "fallback_inferred",
 ] as const;

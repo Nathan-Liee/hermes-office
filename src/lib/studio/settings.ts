@@ -34,11 +34,11 @@ export type StudioGatewaySettings = {
 export type StudioGatewayAdapterType =
   | "hermes"
   | "local"
-  | "claw3d";
+  | "ho3d";
 export const STUDIO_GATEWAY_ADAPTER_TYPES = [
   "hermes",
   "local",
-  "claw3d",
+  "ho3d",
 ] as const;
 
 export type StudioGatewayProfile = {
@@ -492,7 +492,7 @@ const normalizeTaskBoardCard = (
     status: isTaskBoardStatus(record.status) ? record.status : (fallback?.status ?? "todo"),
     source: isTaskBoardSource(record.source)
       ? record.source
-      : (fallback?.source ?? "claw3d_manual"),
+      : (fallback?.source ?? "ho3d_manual"),
     sourceEventId:
       normalizeOptionalIsoString(record.sourceEventId, fallback?.sourceEventId ?? null) ??
       null,
@@ -806,7 +806,7 @@ const normalizeGatewayProfiles = (
   for (const adapterType of [
     "hermes",
     "local",
-    "claw3d",
+    "ho3d",
   ] as const) {
     const normalized = normalizeGatewayProfile(value[adapterType]);
     if (normalized) {
@@ -870,7 +870,7 @@ const mergeGatewayProfiles = (
   for (const adapterType of [
     "hermes",
     "local",
-    "claw3d",
+    "ho3d",
   ] as const) {
     const profilePatch = patch[adapterType];
     if (profilePatch === undefined) continue;
@@ -924,7 +924,7 @@ const normalizeGatewayAdapterType = (
   if (
     adapterType === "hermes" ||
     adapterType === "local" ||
-    adapterType === "claw3d"
+    adapterType === "ho3d"
   ) {
     return adapterType;
   }
@@ -951,7 +951,7 @@ export const resolveDefaultStudioGatewayProfile = (
   }
 
   switch (adapterType) {
-    case "claw3d":
+    case "ho3d":
       return { url: DEFAULT_CLAW3D_RUNTIME_URL, token: "" };
     case "local":
       return { url: DEFAULT_LOCAL_RUNTIME_URL, token: "" };

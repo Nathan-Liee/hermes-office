@@ -22,7 +22,7 @@ import { buildAgentSkillsAllowlistSet, deriveAgentSkillsAccessMode } from "@/lib
 type MarketplaceFilter = "all" | SkillMarketplaceCollectionId;
 
 const FILTER_LABELS: Record<MarketplaceFilter, string> = {
-  claw3d: "Claw3D",
+  ho3d: "HO3D",
   all: "All",
   featured: "Featured",
   installed: "Installed",
@@ -100,7 +100,7 @@ export function SkillsMarketplacePanel({
   onOpenAgentSettings: (agentId: string) => void;
 }) {
   const [query, setQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<MarketplaceFilter>("claw3d");
+  const [activeFilter, setActiveFilter] = useState<MarketplaceFilter>("ho3d");
   const [detailSkillKey, setDetailSkillKey] = useState<string | null>(null);
 
   const entries = useMemo(
@@ -121,7 +121,7 @@ export function SkillsMarketplacePanel({
     const normalizedQuery = query.trim().toLowerCase();
     const visibleCollectionIds: SkillMarketplaceCollectionId[] =
       activeFilter === "all"
-        ? ["claw3d", "built-in", "installed", "workspace", "extra", "other"]
+        ? ["ho3d", "built-in", "installed", "workspace", "extra", "other"]
         : [activeFilter];
     return collections
       .filter((collection) => visibleCollectionIds.includes(collection.id))
@@ -155,7 +155,7 @@ export function SkillsMarketplacePanel({
 
   const filterCounts = useMemo(() => {
     const counts: Record<MarketplaceFilter, number> = {
-      claw3d: 0,
+      ho3d: 0,
       all: entries.length,
       featured: 0,
       installed: 0,

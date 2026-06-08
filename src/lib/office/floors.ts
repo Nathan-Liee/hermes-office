@@ -5,7 +5,7 @@ export type FloorProvider =
   | "custom"
   | "demo"
   | "local"
-  | "claw3d";
+  | "ho3d";
 export type FloorZone = "building" | "outside";
 
 export type FloorId =
@@ -13,7 +13,7 @@ export type FloorId =
   | "openclaw-ground"
   | "hermes-first"
   | "local-runtime"
-  | "claw3d-runtime"
+  | "ho3d-runtime"
   | "custom-second"
   | "training"
   | "traders-floor"
@@ -79,15 +79,15 @@ export const OFFICE_FLOORS: readonly FloorDefinition[] = [
     runtimeProfileId: "local-default",
   },
   {
-    id: "claw3d-runtime",
-    label: "Claw3D Runtime Floor",
-    shortLabel: "Claw3D",
-    provider: "claw3d",
+    id: "ho3d-runtime",
+    label: "HO3D Runtime Floor",
+    shortLabel: "HO3D",
+    provider: "ho3d",
     kind: "runtime",
     zone: "building",
     enabled: true,
     sortOrder: 28,
-    runtimeProfileId: "claw3d-default",
+    runtimeProfileId: "ho3d-default",
   },
   {
     id: "custom-second",

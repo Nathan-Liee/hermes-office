@@ -366,7 +366,7 @@ export const useOfficeSkillsMarketplace = ({
         });
         params.onProgress?.({
           percent: 92,
-          message: "Refreshing skill state in Claw3D.",
+          message: "Refreshing skill state in HO3D.",
         });
         await loadMarketplace(targetAgentId);
         params.onProgress?.({

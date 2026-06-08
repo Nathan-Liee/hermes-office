@@ -32,7 +32,7 @@ export type RuntimeCapability =
 export type RuntimeProviderId =
   | "hermes"
   | "local"
-  | "claw3d";
+  | "ho3d";
 
 export type RuntimeProviderMetadata = {
   id: RuntimeProviderId;
