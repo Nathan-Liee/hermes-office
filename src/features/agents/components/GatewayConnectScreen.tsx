@@ -62,7 +62,7 @@ export const GatewayConnectScreen = ({
               type="text"
               value={gatewayUrl}
               onChange={(event) => onGatewayUrlChange(event.target.value)}
-              placeholder="ws://localhost:18789"
+              placeholder="http://localhost:20128/v1"
               spellCheck={false}
             />
           </label>
