@@ -30,12 +30,9 @@ export type RuntimeCapability =
   | "agent-roles";
 
 export type RuntimeProviderId =
-  | "openclaw"
   | "hermes"
-  | "demo"
   | "local"
-  | "claw3d"
-  | "custom";
+  | "claw3d";
 
 export type RuntimeProviderMetadata = {
   id: RuntimeProviderId;

@@ -1,14 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { isLikelyLocalGatewayUrl } from "@/lib/gateway/local-gateway";
 import { removeSkillLocally } from "@/lib/skills/remove-local";
 import type { RemovableSkillSource, SkillRemoveRequest } from "@/lib/skills/types";
-import {
-  resolveConfiguredSshTarget,
-  resolveGatewaySshTargetFromGatewayUrl,
-} from "@/lib/ssh/gateway-host";
-import { removeSkillOverSsh } from "@/lib/ssh/skills-remove";
-import { loadStudioSettings } from "@/lib/studio/settings-store";
 
 export const runtime = "nodejs";
 
@@ -26,15 +19,6 @@ const normalizeRequired = (value: unknown, field: string): string => {
     throw new Error(`${field} is required.`);
   }
   return trimmed;
-};
-
-const resolveSkillRemovalSshTarget = (): string | null => {
-  const configured = resolveConfiguredSshTarget(process.env);
-  if (configured) return configured;
-  const settings = loadStudioSettings();
-  const gatewayUrl = settings.gateway?.url ?? "";
-  if (isLikelyLocalGatewayUrl(gatewayUrl)) return null;
-  return resolveGatewaySshTargetFromGatewayUrl(gatewayUrl, process.env);
 };
 
 const normalizeRemoveRequest = (body: unknown): SkillRemoveRequest => {
@@ -62,10 +46,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as unknown;
     const removeRequest = normalizeRemoveRequest(body);
 
-    const sshTarget = resolveSkillRemovalSshTarget();
-    const result = sshTarget
-      ? removeSkillOverSsh({ sshTarget, request: removeRequest })
-      : removeSkillLocally(removeRequest);
+    const result = removeSkillLocally(removeRequest);
 
     return NextResponse.json({ result });
   } catch (err) {
@@ -75,11 +56,7 @@ export async function POST(request: Request) {
       message.includes("Invalid request payload") ||
       message.includes("Unsupported skill source") ||
       message.includes("Refusing to remove") ||
-      message.includes("not a directory") ||
-      message.includes("Remote workspace skill removal is not supported over SSH") ||
-      message.includes("Gateway URL is missing") ||
-      message.includes("Invalid gateway URL") ||
-      message.includes("require OPENCLAW_GATEWAY_SSH_TARGET")
+      message.includes("not a directory")
         ? 400
         : 500;
     if (status >= 500) {

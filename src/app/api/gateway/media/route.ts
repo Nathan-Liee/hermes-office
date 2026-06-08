@@ -1,12 +1,5 @@
 import { NextResponse } from "next/server";
 
-import { isLikelyLocalGatewayUrl } from "@/lib/gateway/local-gateway";
-import {
-  resolveConfiguredSshTarget,
-  resolveGatewaySshTargetFromGatewayUrl,
-  runSshJson,
-} from "@/lib/ssh/gateway-host";
-import { loadStudioSettings } from "@/lib/studio/settings-store";
 import * as fs from "node:fs/promises";
 import * as os from "node:os";
 import * as path from "node:path";
@@ -68,27 +61,6 @@ const isWithinAllowedRoot = (targetPath: string, allowedRoot: string): boolean =
   return !relative.startsWith("..") && !path.isAbsolute(relative);
 };
 
-const validateRemoteMediaPath = (raw: string): { remotePath: string; mime: string } => {
-  const { trimmed, mime } = validateRawMediaPath(raw);
-
-  if (!(trimmed.startsWith("/") || trimmed === "~" || trimmed.startsWith("~/"))) {
-    throw new Error("path must be absolute or start with ~/");
-  }
-
-  // Remote side enforces ~/.openclaw; this guard lets Studio on macOS request
-  // /home/ubuntu/.openclaw/... without tripping local homedir checks.
-  const normalized = trimmed.replaceAll("\\\\", "/");
-  const inOpenclaw =
-    normalized === "~/.openclaw" ||
-    normalized.startsWith("~/.openclaw/") ||
-    normalized.includes("/.openclaw/");
-  if (!inOpenclaw) {
-    throw new Error("Refusing to read remote media outside ~/.openclaw");
-  }
-
-  return { remotePath: trimmed, mime };
-};
-
 const readLocalMedia = async (
   resolvedPath: string,
   allowedRoot: string
@@ -118,118 +90,19 @@ const readLocalMedia = async (
   return { bytes: buf, size: stat.size };
 };
 
-const REMOTE_READ_SCRIPT = `
-set -euo pipefail
-
-python3 - "$1" <<'PY'
-import base64
-import json
-import mimetypes
-import os
-import pathlib
-import sys
-
-raw = sys.argv[1].strip()
-if not raw:
-  print(json.dumps({"error": "path is required"}))
-  raise SystemExit(2)
-
-p = pathlib.Path(os.path.expanduser(raw))
-try:
-  resolved = p.resolve(strict=True)
-except FileNotFoundError:
-  print(json.dumps({"error": f"file not found: {raw}"}))
-  raise SystemExit(3)
-
-home = pathlib.Path.home().resolve()
-allowed = (home / ".openclaw").resolve()
-if resolved != allowed and allowed not in resolved.parents:
-  print(json.dumps({"error": f"Refusing to read media outside {allowed}"}))
-  raise SystemExit(4)
-
-ext = resolved.suffix.lower()
-mime = {
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".webp": "image/webp",
-}.get(ext) or (mimetypes.guess_type(str(resolved))[0] or "")
-
-if not mime.startswith("image/"):
-  print(json.dumps({"error": f"Unsupported media extension: {ext or '(none)'}"}))
-  raise SystemExit(5)
-
-size = resolved.stat().st_size
-max_bytes = ${MAX_MEDIA_BYTES}
-if size > max_bytes:
-  print(json.dumps({"error": f"media file too large ({size} bytes)"}))
-  raise SystemExit(6)
-
-data = base64.b64encode(resolved.read_bytes()).decode("ascii")
-print(json.dumps({"ok": True, "mime": mime, "size": size, "data": data}))
-PY
-`;
-
-const resolveSshTarget = (): string | null => {
-  const settings = loadStudioSettings();
-  const gatewayUrl = settings.gateway?.url ?? "";
-  if (isLikelyLocalGatewayUrl(gatewayUrl)) return null;
-  const configured = resolveConfiguredSshTarget(process.env);
-  if (configured) return configured;
-  return resolveGatewaySshTargetFromGatewayUrl(gatewayUrl, process.env);
-};
-
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const rawPath = (searchParams.get("path") ?? "").trim();
 
-    const sshTarget = resolveSshTarget();
-
-    if (!sshTarget) {
-      const { resolved, mime } = resolveAndValidateLocalMediaPath(rawPath);
-      const allowedRoot = path.join(os.homedir(), ".openclaw");
-      const { bytes, size } = await readLocalMedia(resolved, allowedRoot);
-      const body = new Blob([Uint8Array.from(bytes)], { type: mime });
-      return new Response(body, {
-        headers: {
-          "Content-Type": mime,
-          "Content-Length": String(size),
-          "Cache-Control": "no-store",
-        },
-      });
-    }
-
-    const { remotePath, mime } = validateRemoteMediaPath(rawPath);
-
-    const payload = runSshJson({
-      sshTarget,
-      argv: ["bash", "-s", "--", remotePath],
-      label: "gateway media read",
-      input: REMOTE_READ_SCRIPT,
-      fallbackMessage: `Failed to fetch media over ssh (${sshTarget})`,
-      maxBuffer: Math.ceil(MAX_MEDIA_BYTES * 1.6),
-    }) as {
-      ok?: boolean;
-      data?: string;
-      mime?: string;
-      size?: number;
-    };
-
-    const b64 = payload.data ?? "";
-    if (!b64) {
-      throw new Error("Remote media fetch returned empty data");
-    }
-
-    const buf = Buffer.from(b64, "base64");
-    const responseMime = payload.mime || mime;
-    const body = new Blob([Uint8Array.from(buf)], { type: responseMime });
-
+    const { resolved, mime } = resolveAndValidateLocalMediaPath(rawPath);
+    const allowedRoot = path.join(os.homedir(), ".openclaw");
+    const { bytes, size } = await readLocalMedia(resolved, allowedRoot);
+    const body = new Blob([Uint8Array.from(bytes)], { type: mime });
     return new Response(body, {
       headers: {
-        "Content-Type": responseMime,
-        "Content-Length": String(buf.length),
+        "Content-Type": mime,
+        "Content-Length": String(size),
         "Cache-Control": "no-store",
       },
     });

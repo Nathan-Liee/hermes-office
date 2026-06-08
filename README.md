@@ -21,11 +21,9 @@ Instead of watching automation through dashboards and logs, you walk through a l
 
 If you want a personal, self-hosted workspace that turns your AI workforce into something you can actually _see_, this is it.
 
-Supported runtimes include: OpenClaw Gateway, Hermes, a direct HTTP `custom` runtime provider for orchestrator-backed stacks, and a built-in demo gateway for office exploration without a real agent framework.
+Supported runtimes include: **Hermes** (native), OpenClaw Gateway, a direct HTTP `custom` runtime provider for orchestrator-backed stacks, and a built-in demo gateway for office exploration without a real agent framework.
 
 [Website](https://www.claw3d.ai/) · [Vision](VISION.md) · [Architecture](ARCHITECTURE.md) · [Tutorial](TUTORIAL.md) · [Getting Started](#quick-start) · [Runtime Profiles](docs/runtime-profiles.md) · [Multi-Agent Beta](docs/multi-agent-beta.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [Discord](https://discord.gg/UzwNn5Zkhr)
-
-> **Unofficial project.** Claw3D is an independent, community-driven project and is not affiliated with, endorsed by, or maintained by the OpenClaw team. OpenClaw is a separate project, and this repository is not the official OpenClaw repository.
 
 Built and maintained by **LukeTheDev**. Follow on X: [@iamlukethedev](https://x.com/iamlukethedev).
 
@@ -44,8 +42,8 @@ Claw3D is the visualization and interaction layer.
 
 Today it can sit on top of:
 
+- **Hermes** (native — bundled WebSocket adapter)
 - OpenClaw through the existing gateway flow
-- Hermes through the bundled WebSocket adapter
 - a direct HTTP `custom` runtime provider for orchestrator-backed stacks
 - a built-in demo gateway for office exploration without a real agent framework
 

@@ -208,7 +208,7 @@ export const useRemoteOfficePresence = ({
             : null;
         const nextSnapshot = buildOfficePresenceSnapshotFromGateway({
           agentsResult,
-          helloSnapshot: gatewayClient.getLastHello()?.snapshot,
+          helloSnapshot: gatewayClient.getLastHello(),
           statusSummary,
           previewSnapshot,
           workspaceId: "remote-gateway",

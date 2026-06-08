@@ -12,7 +12,7 @@ That matters because:
 
 - Hermes already has real control surfaces: ACP and an OpenAI-compatible API server.
 - Vera already has a real orchestrator/gateway shape.
-- Every future backend would otherwise need to keep emulating the OpenClaw gateway protocol.
+- Every future backend would otherwise need to keep emulating the Claw3D gateway protocol.
 
 The better path is:
 

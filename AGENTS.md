@@ -2,9 +2,9 @@
 
 Keep repository instructions generic and safe for open source.
 
-This repo is a frontend for OpenClaw. Keep any OpenClaw runtime checkout separate from this repository.
+This repo is a frontend for Hermes Agent. Keep any runtime checkout separate from this repository.
 
-Do not modify the OpenClaw source code. When the user asks for changes, they are asking for changes to this app. Your solutions should be applied to this app but to understand the full context of implementing your solution, you will need to search through OpenClaw's source code.
+Do not modify the Hermes Agent source code. When the user asks for changes, they are asking for changes to this app. Your solutions should be applied to this app but to understand the full context of implementing your solution, you will need to search through Hermes or OpenClaw source code if relevant.
 
 If you use local private overlay instructions, keep them outside the repository and do not commit them here.
 
@@ -14,13 +14,14 @@ Do not commit personal, environment-specific, or secret instructions to this rep
 
 ### Service overview
 
-Claw3D is a Next.js 16 frontend (TypeScript, React 19, Three.js, Phaser) for OpenClaw. It runs a custom Node.js server (`server/index.js`) that bundles a same-origin WebSocket proxy to the upstream OpenClaw Gateway. No database or Docker is required. The only hard system dependency is Node.js 20+ with npm 10+.
+Claw3D is a Next.js 16 frontend (TypeScript, React 19, Three.js, Phaser) for Hermes. It runs a custom Node.js server (`server/index.js`) that communicates with Hermes via the Hermes API. No database or Docker is required. The only hard system dependency is Node.js 20+ with npm 10+.
 
 ### Running the app
 
 - `npm run dev` starts the dev server on port 3000 via the custom server (`node server/index.js --dev`).
-- The app requires a running OpenClaw Gateway to show agent data. Without one, the UI loads but shows the gateway connection form. This is expected and not an error.
+- The app requires a running Hermes API server to show agent data. Without one, the UI loads but shows the gateway connection form. This is expected and not an error.
 - `.env` is copied from `.env.example`; see `README.md` "Configuration" for variable descriptions.
+- For Hermes: set `HERMES_API_URL`, `HERMES_API_KEY`, run `npm run hermes-adapter`, then connect Studio to `ws://localhost:18789`.
 
 ### Lint, typecheck, and tests
 
@@ -32,10 +33,9 @@ Claw3D is a Next.js 16 frontend (TypeScript, React 19, Three.js, Phaser) for Ope
 
 ### Build
 
-- `npm run build` — Next.js production build. Expect a non-blocking warning about `Can't resolve 'openclaw'`; the `openclaw` npm package is resolved optionally at runtime and is not bundled.
+- `npm run build` — Next.js production build.
 
 ### Gotchas
 
-- The `openclaw` npm package is not a dependency of this repo. The build warning about it is harmless.
 - `npm run studio:setup` is interactive (TTY prompts) — avoid running it in non-interactive cloud environments.
 - Vitest runs in watch mode by default; always pass `--run` for CI/cloud agent use.
